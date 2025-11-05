@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <string name="app_name">RecetApp</string>
+
+    <!-- Navegación -->
+    <string name="inicio">Inicio</string>
+    <string name="buscar">Buscar</string>
+    <string name="agregar">Agregar</string>
+    <string name="favoritos">Favoritos</string>
+    <string name="perfil">Perfil</string>
+
+    <!-- Splash -->
+    <string name="tu_cocina_digital">Tu cocina digital</string>
+
+    <!-- Login -->
+    <string name="bienvenido">Bienvenido</string>
+    <string name="inicia_sesion_continuar">Inicia sesión para continuar</string>
+    <string name="correo_electronico">Correo electrónico</string>
+    <string name="contrasena">Contraseña</string>
+    <string name="recordarme">Recordarme</string>
+    <string name="olvidaste_contrasena">¿Olvidaste tu contraseña?</string>
+    <string name="iniciar_sesion">Iniciar Sesión</string>
+    <string name="o_continua_con">O continúa con</string>
+    <string name="google">Google</string>
+    <string name="facebook">Facebook</string>
+    <string name="no_tienes_cuenta_registrate">¿No tienes cuenta? Regístrate</string>
+
+    <!-- Registro -->
+    <string name="crear_cuenta">Crear Cuenta</string>
+    <string name="unete_comunidad">Únete a nuestra comunidad culinaria</string>
+    <string name="nombre_completo">Nombre completo</string>
+    <string name="confirmar_contrasena">Confirmar contraseña</string>
+    <string name="minimo_8_caracteres">Mínimo 8 caracteres</string>
+    <string name="acepto_terminos">Acepto los Términos y Condiciones y la Política de Privacidad</string>
+    <string name="ya_tienes_cuenta_inicia_sesion">¿Ya tienes cuenta? Inicia Sesión</string>
+
+    <!-- Home -->
+    <string name="hola_chef">Hola, Chef! 👋</string>
+    <string name="que_cocinamos_hoy">¿Qué cocinamos hoy?</string>
+    <string name="buscar_recetas">Buscar recetas…</string>
+    <string name="categorias">Categorías</string>
+    <string name="populares">Populares</string>
+    <string name="rapidas">Rápidas</string>
+    <string name="saludables">Saludables</string>
+    <string name="familia">Familia</string>
+    <string name="recetas_destacadas">Recetas destacadas</string>
+
+    <!-- Búsqueda -->
+    <string name="filtros_avanzados">FILTROS AVANZADOS</string>
+    <string name="tiempo">Tiempo</string>
+    <string name="hasta_30_min">Hasta 30 min</string>
+    <string name="porciones">Porciones</string>
+    <string name="personas">personas</string>
+    <string name="resultados">RESULTADOS</string>
+    <string name="todas">Todas</string>
+    <string name="desayuno">Desayuno</string>
+    <string name="comida">Comida</string>
+    <string name="cena">Cena</string>
+    <string name="postres">Postres</string>
+    <string name="bebidas">Bebidas</string>
+
+    <!-- Detalle de Receta -->
+    <string name="ingredientes">Ingredientes</string>
+    <string name="preparacion">Preparación</string>
+    <string name="comenzar_cocinar">Comenzar a cocinar</string>
+    <string name="min">min</string>
+
+    <!-- Favoritos -->
+    <string name="mis_favoritos">Mis Favoritos</string>
+    <string name="recetas_guardadas">recetas guardadas</string>
+    <string name="sin_favoritos">No tienes recetas favoritas aún</string>
+    <string name="explora_recetas">Explora y guarda tus recetas favoritas</string>
+
+    <!-- Perfil -->
+    <string name="chef_aficionada">Chef Aficionada</string>
+    <string name="recetas">Recetas</string>
+    <string name="seguidores">Seguidores</string>
+    <string name="mis_recetas">Mis recetas</string>
+    <string name="siguiendo">Siguiendo</string>
+    <string name="resenas">Reseñas</string>
+    <string name="configuracion">Configuración</string>
+    <string name="notificaciones">Notificaciones</string>
+    <string name="preferencias">Preferencias</string>
+    <string name="ayuda">Ayuda</string>
+    <string name="cerrar_sesion">Cerrar sesión</string>
+
+    <!-- Contenidos Descriptivos -->
+    <string name="app_logo">Logo de RecetApp</string>
+    <string name="volver">Volver</string>
+    <string name="imagen_receta">Imagen de la receta</string>
+    <string name="agregar_favorito">Agregar a favoritos</string>
+    <string name="quitar_favorito">Quitar de favoritos</string>
+</resources>

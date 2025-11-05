@@ -1,0 +1,18 @@
+<?xml version="1.0" encoding="utf-8"?>
+<resources>
+    <!-- Dark theme -->
+    <style name="Base.Theme.RecetApp" parent="Theme.Material3.Dark.NoActionBar">
+        <!-- Primary brand color -->
+        <item name="colorPrimary">@color/orange_primary</item>
+        <item name="colorPrimaryVariant">@color/orange_primary_dark</item>
+        <item name="colorOnPrimary">@color/black</item>
+
+        <!-- Secondary brand color -->
+        <item name="colorSecondary">@color/red_accent</item>
+        <item name="colorSecondaryVariant">@color/red_accent</item>
+        <item name="colorOnSecondary">@color/black</item>
+
+        <!-- Status bar color -->
+        <item name="android:statusBarColor">@color/black</item>
+    </style>
+</resources>
