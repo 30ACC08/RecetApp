@@ -90,4 +90,16 @@
     <string name="imagen_receta">Imagen de la receta</string>
     <string name="agregar_favorito">Agregar a favoritos</string>
     <string name="quitar_favorito">Quitar de favoritos</string>
+
+    <!-- Admin -->
+    <string name="administracion">Administración</string>
+    <string name="usuarios_registrados">Usuarios Registrados</string>
+    <string name="usuarios_totales">Usuarios Totales</string>
+    <string name="lista_de_usuarios">LISTA DE USUARIOS</string>
+    <string name="no_hay_usuarios">No hay usuarios registrados</string>
+    <string name="usuarios_apareceran">Los usuarios aparecerán aquí cuando se registren</string>
+
+    <string name="editar">Editar</string>
+    <string name="eliminar">Eliminar</string>
+    <string name="gestionar_usuarios">Gestionar Usuarios</string>
 </resources>

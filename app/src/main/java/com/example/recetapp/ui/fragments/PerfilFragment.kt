@@ -6,14 +6,18 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentPerfilBinding
+import com.example.recetapp.data.model.UserRole
+import com.example.recetapp.ui.viewmodel.AuthViewModel
 
 class PerfilFragment : Fragment() {
 
     private var _binding: FragmentPerfilBinding? = null
     private val binding get() = _binding!!
+    private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
         inflater: LayoutInflater,
@@ -27,6 +31,31 @@ class PerfilFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        loadUserData()
+        setupClickListeners()
+    }
+
+    private fun loadUserData() {
+        val userName = viewModel.getCurrentUserName() ?: "Usuario"
+        val userRole = viewModel.getCurrentUserRole()
+
+        binding.tvNombre.text = userName
+
+        if (userRole == UserRole.ADMIN) {
+            binding.tvTipo.text = "Administrador del Sistema"
+            binding.tvTipo.setTextColor(resources.getColor(R.color.error, null))
+        } else {
+            binding.tvTipo.text = getString(R.string.chef_aficionada)
+        }
+
+        if (viewModel.isAdmin()) {
+            binding.llAdmin.visibility = View.VISIBLE
+        } else {
+            binding.llAdmin.visibility = View.GONE
+        }
+    }
+
+    private fun setupClickListeners() {
         binding.llMisRecetas.setOnClickListener {
             Toast.makeText(context, "Mis Recetas", Toast.LENGTH_SHORT).show()
         }
@@ -43,6 +72,10 @@ class PerfilFragment : Fragment() {
             Toast.makeText(context, "Reseñas", Toast.LENGTH_SHORT).show()
         }
 
+        binding.llAdmin.setOnClickListener {
+            findNavController().navigate(R.id.action_perfilFragment_to_adminFragment)
+        }
+
         binding.llNotificaciones.setOnClickListener {
             Toast.makeText(context, "Notificaciones", Toast.LENGTH_SHORT).show()
         }
@@ -56,7 +89,8 @@ class PerfilFragment : Fragment() {
         }
 
         binding.llCerrarSesion.setOnClickListener {
-            Toast.makeText(context, "Cerrando sesión...", Toast.LENGTH_SHORT).show()
+            viewModel.logout()
+            Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
             findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
         }
     }
