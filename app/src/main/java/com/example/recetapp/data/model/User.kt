@@ -1,10 +1,9 @@
 package com.example.recetapp.data.model
 
 data class User(
-    val id: String,
-    val nombre: String,
-    val email: String,
-    val password: String,
+    val id: String = "",
+    val nombre: String = "",
+    val email: String = "",
     val rol: UserRole = UserRole.USER
 )
 

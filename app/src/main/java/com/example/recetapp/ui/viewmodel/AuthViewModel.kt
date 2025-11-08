@@ -4,15 +4,15 @@ import android.app.Application
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
-import com.example.recetapp.data.local.SessionManager
+import androidx.lifecycle.viewModelScope
 import com.example.recetapp.data.model.User
 import com.example.recetapp.data.model.UserRole
-import com.example.recetapp.data.repository.AuthRepository
+import com.example.recetapp.data.repository.FirebaseAuthRepository
+import kotlinx.coroutines.launch
 
 class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
-    private val authRepository = AuthRepository(application)
-    private val sessionManager = SessionManager(application)
+    private val authRepository = FirebaseAuthRepository()
 
     private val _loginResult = MutableLiveData<Result<User>>()
     val loginResult: LiveData<Result<User>> = _loginResult
@@ -28,6 +28,12 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _deleteResult = MutableLiveData<Result<Boolean>>()
     val deleteResult: LiveData<Result<Boolean>> = _deleteResult
+
+    private val _allUsers = MutableLiveData<List<User>>()
+    val allUsers: LiveData<List<User>> = _allUsers
+
+    private val _currentUser = MutableLiveData<User?>()
+    val currentUser: LiveData<User?> = _currentUser
 
     fun login(email: String, password: String, rememberMe: Boolean) {
         when {
@@ -45,94 +51,90 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             }
         }
 
-        val result = authRepository.loginUser(email, password)
-        if (result.isSuccess) {
-            val user = result.getOrNull()
-            user?.let {
-                sessionManager.saveLoginSession(it.id, it.nombre, it.email, it.rol, rememberMe)
-            }
+        viewModelScope.launch {
+            val result = authRepository.loginUser(email, password)
+            _loginResult.value = result
         }
-        _loginResult.value = result
     }
 
-    fun register(nombre: String, email: String, password: String, confirmarPassword: String): Boolean {
+    fun register(nombre: String, email: String, password: String, confirmarPassword: String) {
         when {
             nombre.isEmpty() -> {
                 _validationError.value = "Por favor ingresa tu nombre completo"
-                return false
+                return
             }
             email.isEmpty() -> {
                 _validationError.value = "Por favor ingresa tu correo electrónico"
-                return false
+                return
             }
             !android.util.Patterns.EMAIL_ADDRESS.matcher(email).matches() -> {
                 _validationError.value = "Por favor ingresa un correo válido"
-                return false
+                return
             }
             password.isEmpty() -> {
                 _validationError.value = "Por favor ingresa una contraseña"
-                return false
+                return
             }
-            password.length < 8 -> {
-                _validationError.value = "La contraseña debe tener al menos 8 caracteres"
-                return false
+            password.length < 6 -> {
+                _validationError.value = "La contraseña debe tener al menos 6 caracteres"
+                return
             }
             password != confirmarPassword -> {
                 _validationError.value = "Las contraseñas no coinciden"
-                return false
+                return
             }
         }
 
-        val result = authRepository.registerUser(nombre, email, password)
-        _registerResult.value = result
-        return result.isSuccess
+        viewModelScope.launch {
+            val result = authRepository.registerUser(nombre, email, password)
+            _registerResult.value = result
+        }
     }
 
-    fun updateUser(email: String, newNombre: String, newPassword: String?) {
+    fun updateUser(userId: String, newNombre: String) {
         if (newNombre.isEmpty()) {
             _validationError.value = "El nombre no puede estar vacío"
             return
         }
 
-        if (newPassword != null && newPassword.length < 8) {
-            _validationError.value = "La contraseña debe tener al menos 8 caracteres"
-            return
+        viewModelScope.launch {
+            val result = authRepository.updateUser(userId, newNombre)
+            _updateResult.value = result
+            if (result.isSuccess) {
+                loadAllUsers()
+            }
         }
-
-        val result = authRepository.updateUser(email, newNombre, newPassword)
-        _updateResult.value = result
     }
 
-    fun deleteUser(email: String) {
-        val result = authRepository.deleteUser(email)
-        _deleteResult.value = result
+    fun deleteUser(userId: String, userEmail: String) {
+        viewModelScope.launch {
+            val result = authRepository.deleteUser(userId, userEmail)
+            _deleteResult.value = result
+            if (result.isSuccess) {
+                loadAllUsers()
+            }
+        }
     }
 
-    fun getAllUsers(): List<User> {
-        return authRepository.getAllUsers()
+    fun loadAllUsers() {
+        viewModelScope.launch {
+            val users = authRepository.getAllUsers()
+            _allUsers.value = users
+        }
+    }
+
+    fun loadCurrentUser() {
+        viewModelScope.launch {
+            val user = authRepository.getCurrentUser()
+            _currentUser.value = user
+        }
     }
 
     fun isLoggedIn(): Boolean {
-        return sessionManager.isLoggedIn()
-    }
-
-    fun isAdmin(): Boolean {
-        return sessionManager.isAdmin()
+        return authRepository.isLoggedIn()
     }
 
     fun logout() {
-        sessionManager.clearSession()
-    }
-
-    fun getCurrentUserName(): String? {
-        return sessionManager.getUserName()
-    }
-
-    fun getCurrentUserEmail(): String? {
-        return sessionManager.getUserEmail()
-    }
-
-    fun getCurrentUserRole(): UserRole {
-        return sessionManager.getUserRole()
+        authRepository.logout()
     }
 }

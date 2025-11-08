@@ -36,22 +36,21 @@ class PerfilFragment : Fragment() {
     }
 
     private fun loadUserData() {
-        val userName = viewModel.getCurrentUserName() ?: "Usuario"
-        val userRole = viewModel.getCurrentUserRole()
+        viewModel.loadCurrentUser()
 
-        binding.tvNombre.text = userName
+        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+            if (user != null) {
+                binding.tvNombre.text = user.nombre
 
-        if (userRole == UserRole.ADMIN) {
-            binding.tvTipo.text = "Administrador del Sistema"
-            binding.tvTipo.setTextColor(resources.getColor(R.color.error, null))
-        } else {
-            binding.tvTipo.text = getString(R.string.chef_aficionada)
-        }
-
-        if (viewModel.isAdmin()) {
-            binding.llAdmin.visibility = View.VISIBLE
-        } else {
-            binding.llAdmin.visibility = View.GONE
+                if (user.rol == UserRole.ADMIN) {
+                    binding.tvTipo.text = "Administrador del Sistema"
+                    binding.tvTipo.setTextColor(resources.getColor(R.color.error, null))
+                    binding.llAdmin.visibility = View.VISIBLE
+                } else {
+                    binding.tvTipo.text = getString(R.string.chef_aficionada)
+                    binding.llAdmin.visibility = View.GONE
+                }
+            }
         }
     }
 
