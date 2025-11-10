@@ -1,0 +1,342 @@
+<?xml version="1.0" encoding="utf-8"?>
+<ScrollView
+    xmlns:android="http://schemas.android.com/apk/res/android"
+    xmlns:app="http://schemas.android.com/apk/res-auto"
+    android:layout_width="match_parent"
+    android:layout_height="wrap_content"
+    android:fillViewport="true">
+
+    <LinearLayout
+        android:layout_width="match_parent"
+        android:layout_height="wrap_content"
+        android:orientation="vertical"
+        android:padding="24dp">
+
+        <!-- Título -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:text="Filtros Avanzados"
+            android:textColor="@color/text_primary"
+            android:textSize="24sp"
+            android:textStyle="bold" />
+
+        <!-- Categoría -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:text="Categoría"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinner_category"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="48dp" />
+
+        <!-- Cocina/Área -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Cocina"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <Spinner
+            android:id="@+id/spinner_area"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:minHeight="48dp" />
+
+        <!-- Fuente -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Fuente de Datos"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_source"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_source_all"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Todas" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_source_mealdb"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="TheMealDB" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_source_spoonacular"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Spoonacular" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Tiempo máximo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_max_time"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Tiempo máximo (min)"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_max_time_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="60"
+                android:textColor="@color/orange_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_max_time"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="5"
+            android:valueFrom="5"
+            android:valueTo="180" />
+
+        <!-- Health Score mínimo -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_min_health"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Health Score mínimo"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_min_health_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="50"
+                android:textColor="@color/success"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_min_health"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="5"
+            android:valueFrom="0"
+            android:valueTo="100" />
+
+        <!-- Calorías máximas -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:gravity="center_vertical"
+            android:orientation="horizontal">
+
+            <com.google.android.material.switchmaterial.SwitchMaterial
+                android:id="@+id/switch_max_calories"
+                android:layout_width="0dp"
+                android:layout_height="wrap_content"
+                android:layout_weight="1"
+                android:text="Calorías máximas"
+                android:textColor="@color/text_primary"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+            <TextView
+                android:id="@+id/tv_max_calories_value"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="500"
+                android:textColor="@color/error"
+                android:textSize="16sp"
+                android:textStyle="bold" />
+
+        </LinearLayout>
+
+        <com.google.android.material.slider.Slider
+            android:id="@+id/slider_max_calories"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:stepSize="50"
+            android:valueFrom="100"
+            android:valueTo="2000" />
+
+        <!-- Restricciones Dietéticas -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Restricciones Dietéticas"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_dietary"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_vegetarian"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🥬 Vegetariano" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_vegan"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌱 Vegano" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_gluten_free"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌾 Sin Gluten" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_dairy_free"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🥛 Sin Lácteos" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Ordenamiento -->
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="Ordenar por"
+            android:textColor="@color/text_primary"
+            android:textSize="16sp"
+            android:textStyle="bold" />
+
+        <com.google.android.material.chip.ChipGroup
+            android:id="@+id/chip_group_sort"
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            app:selectionRequired="true"
+            app:singleSelection="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sort_popularity"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Popularidad" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sort_time"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Tiempo" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sort_health"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Salud" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sort_calories"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Calorías" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_sort_price"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="Precio" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+        <!-- Botones -->
+        <LinearLayout
+            android:layout_width="match_parent"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="24dp"
+            android:orientation="horizontal"
+            android:weightSum="2">
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_clear_filters"
+                style="@style/Widget.Material3.Button.OutlinedButton"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_marginEnd="8dp"
+                android:layout_weight="1"
+                android:text="Limpiar"
+                app:cornerRadius="12dp" />
+
+            <com.google.android.material.button.MaterialButton
+                android:id="@+id/btn_apply_filters"
+                android:layout_width="0dp"
+                android:layout_height="56dp"
+                android:layout_marginStart="8dp"
+                android:layout_weight="1"
+                android:text="Aplicar"
+                app:cornerRadius="12dp" />
+
+        </LinearLayout>
+
+    </LinearLayout>
+
+</ScrollView>

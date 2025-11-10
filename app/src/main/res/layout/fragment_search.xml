@@ -2,6 +2,7 @@
 <androidx.constraintlayout.widget.ConstraintLayout
     xmlns:android="http://schemas.android.com/apk/res/android"
     xmlns:app="http://schemas.android.com/apk/res-auto"
+    xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:background="@color/background_light">
@@ -16,6 +17,7 @@
         android:background="?attr/selectableItemBackgroundBorderless"
         android:contentDescription="@string/volver"
         android:src="@drawable/ic_arrow_back"
+        app:tint="@color/text_primary"
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toTopOf="parent" />
 
@@ -28,9 +30,45 @@
         android:textSize="20sp"
         android:textStyle="bold"
         app:layout_constraintBottom_toBottomOf="@id/btn_back"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintEnd_toStartOf="@id/btn_filters"
+        app:layout_constraintStart_toEndOf="@id/btn_back"
         app:layout_constraintTop_toTopOf="@id/btn_back" />
+
+    <!-- Botón de filtros con badge -->
+    <FrameLayout
+        android:id="@+id/btn_filters"
+        android:layout_width="48dp"
+        android:layout_height="48dp"
+        android:layout_marginEnd="8dp"
+        android:layout_marginTop="8dp"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="parent">
+
+        <ImageButton
+            android:layout_width="match_parent"
+            android:layout_height="match_parent"
+            android:background="?attr/selectableItemBackgroundBorderless"
+            android:contentDescription="Filtros"
+            android:src="@drawable/ic_search"
+            app:tint="@color/text_primary" />
+
+        <TextView
+            android:id="@+id/tv_filter_badge"
+            android:layout_width="20dp"
+            android:layout_height="20dp"
+            android:layout_gravity="end|top"
+            android:layout_marginTop="4dp"
+            android:layout_marginEnd="4dp"
+            android:background="@color/error"
+            android:gravity="center"
+            android:textColor="@color/white"
+            android:textSize="10sp"
+            android:textStyle="bold"
+            android:visibility="gone"
+            tools:text="3"
+            tools:visibility="visible" />
+
+    </FrameLayout>
 
     <!-- Barra de búsqueda -->
     <androidx.cardview.widget.CardView
@@ -46,221 +84,211 @@
         app:layout_constraintStart_toStartOf="parent"
         app:layout_constraintTop_toBottomOf="@id/btn_back">
 
-        <EditText
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="match_parent"
-            android:background="@android:color/transparent"
-            android:hint="@string/buscar_recetas"
-            android:inputType="text"
-            android:padding="16dp"
-            android:textSize="16sp" />
+            android:gravity="center_vertical"
+            android:orientation="horizontal"
+            android:paddingStart="16dp"
+            android:paddingEnd="8dp">
+
+            <EditText
+                android:id="@+id/et_search"
+                android:layout_width="0dp"
+                android:layout_height="match_parent"
+                android:layout_weight="1"
+                android:background="@android:color/transparent"
+                android:hint="@string/buscar_recetas"
+                android:imeOptions="actionSearch"
+                android:inputType="text"
+                android:maxLines="1"
+                android:textSize="16sp" />
+
+            <ImageButton
+                android:id="@+id/btn_search"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
+                android:background="?attr/selectableItemBackgroundBorderless"
+                android:contentDescription="Buscar"
+                android:src="@drawable/ic_search"
+                app:tint="@color/orange_primary" />
+
+        </LinearLayout>
 
     </androidx.cardview.widget.CardView>
 
-    <!-- Filtros (chips) -->
-    <HorizontalScrollView
-        android:id="@+id/hsv_filtros"
-        android:layout_width="0dp"
-        android:layout_height="wrap_content"
-        android:layout_marginTop="16dp"
-        android:scrollbars="none"
-        app:layout_constraintEnd_toEndOf="parent"
-        app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/cv_search">
-
-        <LinearLayout
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:orientation="horizontal"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp">
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginEnd="8dp"
-                android:background="@android:color/holo_orange_dark"
-                android:gravity="center"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/todas"
-                android:textColor="@color/white"
-                android:textStyle="bold" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginEnd="8dp"
-                android:background="@color/divider"
-                android:gravity="center"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/desayuno" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginEnd="8dp"
-                android:background="@color/divider"
-                android:gravity="center"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/comida" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:layout_marginEnd="8dp"
-                android:background="@color/divider"
-                android:gravity="center"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/cena" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="40dp"
-                android:background="@color/divider"
-                android:gravity="center"
-                android:paddingStart="20dp"
-                android:paddingEnd="20dp"
-                android:text="@string/postres" />
-
-        </LinearLayout>
-    </HorizontalScrollView>
-
-    <!-- Resultados -->
+    <!-- Filtros activos -->
     <TextView
-        android:id="@+id/tv_resultados"
+        android:id="@+id/tv_active_filters"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
-        android:layout_marginTop="24dp"
-        android:text="RESULTADOS (12)"
+        android:layout_marginTop="12dp"
+        android:textColor="@color/orange_primary"
+        android:textSize="12sp"
+        android:textStyle="bold"
+        android:visibility="gone"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/cv_search"
+        tools:text="3 filtros activos"
+        tools:visibility="visible" />
+
+    <TextView
+        android:id="@+id/tv_clear_filters"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="Limpiar filtros"
+        android:textColor="@color/text_secondary"
+        android:textSize="12sp"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/tv_active_filters"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/tv_active_filters"
+        tools:visibility="visible" />
+
+    <!-- Chips de categorías rápidas -->
+    <HorizontalScrollView
+        android:id="@+id/hsv_categories"
+        android:layout_width="0dp"
+        android:layout_height="wrap_content"
+        android:layout_marginTop="12dp"
+        android:scrollbars="none"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_active_filters">
+
+        <com.google.android.material.chip.ChipGroup
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:paddingStart="16dp"
+            android:paddingEnd="16dp"
+            app:singleLine="true">
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_desayuno"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍳 Desayuno" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_comida"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍖 Comida" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_cena"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🐟 Cena" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_postres"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🍰 Postres" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_vegetariano"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🥬 Vegetariano" />
+
+            <com.google.android.material.chip.Chip
+                android:id="@+id/chip_vegano"
+                style="@style/Widget.Material3.Chip.Filter"
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:text="🌱 Vegano" />
+
+        </com.google.android.material.chip.ChipGroup>
+
+    </HorizontalScrollView>
+
+    <!-- Contador de resultados -->
+    <TextView
+        android:id="@+id/tv_results_count"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginStart="16dp"
+        android:layout_marginTop="16dp"
         android:textColor="@color/text_secondary"
         android:textSize="12sp"
         android:textStyle="bold"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/hsv_filtros" />
+        app:layout_constraintTop_toBottomOf="@id/hsv_categories"
+        tools:text="12 RECETAS ENCONTRADAS" />
 
-    <ScrollView
-        android:layout_width="0dp"
-        android:layout_height="0dp"
-        android:layout_marginTop="16dp"
+    <!-- ProgressBar -->
+    <ProgressBar
+        android:id="@+id/progress_bar"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:visibility="gone"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
-        app:layout_constraintTop_toBottomOf="@id/tv_resultados">
+        app:layout_constraintTop_toBottomOf="@id/tv_results_count"
+        tools:visibility="visible" />
 
-        <LinearLayout
-            android:layout_width="match_parent"
+    <!-- RecyclerView de resultados -->
+    <androidx.recyclerview.widget.RecyclerView
+        android:id="@+id/rv_search_results"
+        android:layout_width="0dp"
+        android:layout_height="0dp"
+        android:layout_marginTop="12dp"
+        android:clipToPadding="false"
+        android:paddingBottom="16dp"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_results_count"
+        tools:listitem="@layout/item_recipe" />
+
+    <!-- Estado vacío -->
+    <LinearLayout
+        android:id="@+id/tv_empty_state"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:gravity="center"
+        android:orientation="vertical"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="parent"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintStart_toStartOf="parent"
+        app:layout_constraintTop_toBottomOf="@id/tv_results_count"
+        tools:visibility="visible">
+
+        <TextView
+            android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:orientation="vertical"
-            android:paddingStart="16dp"
-            android:paddingEnd="16dp"
-            android:paddingBottom="16dp">
+            android:text="🔍"
+            android:textSize="64sp" />
 
-            <!-- Resultado 1 -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_resultado1"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:layout_marginBottom="12dp"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="16dp"
+            android:text="No se encontraron recetas"
+            android:textColor="@color/text_primary"
+            android:textSize="18sp"
+            android:textStyle="bold" />
 
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
+        <TextView
+            android:layout_width="wrap_content"
+            android:layout_height="wrap_content"
+            android:layout_marginTop="8dp"
+            android:text="Intenta con otros términos de búsqueda\no ajusta los filtros"
+            android:textAlignment="center"
+            android:textColor="@color/text_secondary"
+            android:textSize="14sp" />
 
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="150dp"
-                        android:background="@android:color/holo_orange_light" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Tacos al Pastor"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="⏱ 30 min  ⭐ 4.8"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-            <!-- Resultado 2 -->
-            <androidx.cardview.widget.CardView
-                android:id="@+id/cv_resultado2"
-                android:layout_width="match_parent"
-                android:layout_height="wrap_content"
-                android:clickable="true"
-                android:focusable="true"
-                android:foreground="?android:attr/selectableItemBackground"
-                app:cardCornerRadius="12dp"
-                app:cardElevation="2dp">
-
-                <LinearLayout
-                    android:layout_width="match_parent"
-                    android:layout_height="wrap_content"
-                    android:orientation="vertical">
-
-                    <View
-                        android:layout_width="match_parent"
-                        android:layout_height="150dp"
-                        android:background="@android:color/holo_green_light" />
-
-                    <LinearLayout
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:orientation="vertical"
-                        android:padding="16dp">
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:text="Enchiladas Verdes"
-                            android:textColor="@color/text_primary"
-                            android:textSize="16sp"
-                            android:textStyle="bold" />
-
-                        <TextView
-                            android:layout_width="wrap_content"
-                            android:layout_height="wrap_content"
-                            android:layout_marginTop="4dp"
-                            android:text="⏱ 45 min  ⭐ 4.5"
-                            android:textColor="@color/text_secondary"
-                            android:textSize="12sp" />
-
-                    </LinearLayout>
-
-                </LinearLayout>
-
-            </androidx.cardview.widget.CardView>
-
-        </LinearLayout>
-
-    </ScrollView>
+    </LinearLayout>
 
 </androidx.constraintlayout.widget.ConstraintLayout>
