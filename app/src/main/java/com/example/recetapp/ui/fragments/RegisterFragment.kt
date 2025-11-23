@@ -18,9 +18,7 @@ class RegisterFragment : Fragment() {
     private val viewModel: AuthViewModel by viewModels()
 
     override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
+        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
     ): View {
         _binding = FragmentRegisterBinding.inflate(inflater, container, false)
         return binding.root
@@ -28,73 +26,46 @@ class RegisterFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         setupObservers()
         setupClickListeners()
     }
 
     private fun setupObservers() {
-        // Observar resultado de registro
+        // Éxito en registro
         viewModel.registerResult.observe(viewLifecycleOwner) { result ->
-            result.onSuccess { user ->
-                android.util.Log.d("RegisterFragment", "✅ Registro exitoso: ${user.nombre}")
-                Toast.makeText(
-                    context,
-                    "Cuenta creada exitosamente. Ahora puedes iniciar sesión",
-                    Toast.LENGTH_LONG
-                ).show()
-                findNavController().popBackStack()
+            result.onSuccess {
+                Toast.makeText(context, "Cuenta creada. ¡Bienvenido!", Toast.LENGTH_LONG).show()
+                findNavController().popBackStack() // Volver al login
             }.onFailure { error ->
-                android.util.Log.e("RegisterFragment", "❌ Error de registro: ${error.message}")
                 Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
             }
         }
 
-        // Observar errores de validación
         viewModel.validationError.observe(viewLifecycleOwner) { error ->
             Toast.makeText(context, error, Toast.LENGTH_SHORT).show()
         }
 
-        // Observar estado de carga
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.btnRegistrar.isEnabled = !isLoading
-            if (isLoading) {
-                binding.btnRegistrar.text = "Creando cuenta..."
-            } else {
-                binding.btnRegistrar.text = "Crear Cuenta"
-            }
+            binding.btnRegistrar.text = if (isLoading) "Creando..." else "Crear Cuenta"
         }
     }
 
     private fun setupClickListeners() {
-        binding.btnBack.setOnClickListener {
-            findNavController().popBackStack()
-        }
+        binding.btnBack.setOnClickListener { findNavController().popBackStack() }
+        binding.tvIniciarSesion.setOnClickListener { findNavController().popBackStack() }
 
         binding.btnRegistrar.setOnClickListener {
             if (!binding.cbTerminos.isChecked) {
-                Toast.makeText(
-                    context,
-                    "Debes aceptar los términos y condiciones",
-                    Toast.LENGTH_SHORT
-                ).show()
+                Toast.makeText(context, "Acepta los términos", Toast.LENGTH_SHORT).show()
                 return@setOnClickListener
             }
-
             val nombre = binding.etNombre.text.toString().trim()
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString()
-            val confirmarPassword = binding.etConfirmarPassword.text.toString()
+            val confirmar = binding.etConfirmarPassword.text.toString()
 
-            android.util.Log.d("RegisterFragment", "Intentando registrar usuario:")
-            android.util.Log.d("RegisterFragment", "Nombre: $nombre")
-            android.util.Log.d("RegisterFragment", "Email: $email")
-
-            viewModel.register(nombre, email, password, confirmarPassword)
-        }
-
-        binding.tvIniciarSesion.setOnClickListener {
-            findNavController().popBackStack()
+            viewModel.register(nombre, email, password, confirmar)
         }
     }
 

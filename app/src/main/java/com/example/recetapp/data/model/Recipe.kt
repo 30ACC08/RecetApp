@@ -5,19 +5,19 @@ import kotlinx.parcelize.Parcelize
 
 @Parcelize
 data class Recipe(
-    val id: String,
-    val name: String,
-    val category: String,
-    val area: String,
-    val instructions: String,
-    val thumbnailUrl: String,
-    val imageUrl: String,
-    val tags: List<String>,
-    val ingredients: List<Ingredient>,
-    val videoUrl: String?,
-    val source: RecipeSource,
+    val id: String = "",
+    val name: String = "",
+    val category: String = "",
+    val area: String = "",
+    val instructions: String = "",
+    val thumbnailUrl: String = "",
+    val imageUrl: String = "",
+    val tags: List<String> = emptyList(),
+    val ingredients: List<Ingredient> = emptyList(),
+    val videoUrl: String? = null,
+    val source: RecipeSource = RecipeSource.THEMEALDB,
 
-    // Campos de Spoonacular
+    // Campos opcionales con valores por defecto
     val readyInMinutes: Int? = null,
     val servings: Int? = null,
     val healthScore: Double? = null,
@@ -34,16 +34,16 @@ data class Recipe(
 
 @Parcelize
 data class Ingredient(
-    val name: String,
-    val measure: String
+    val name: String = "",
+    val measure: String = ""
 ) : Parcelable
 
 @Parcelize
 data class Nutrition(
-    val calories: Double,
-    val protein: Double,
-    val fat: Double,
-    val carbs: Double
+    val calories: Double = 0.0,
+    val protein: Double = 0.0,
+    val fat: Double = 0.0,
+    val carbs: Double = 0.0
 ) : Parcelable
 
 enum class RecipeSource {
@@ -52,42 +52,11 @@ enum class RecipeSource {
 }
 
 object RecipeCategories {
-    const val BREAKFAST = "Breakfast"
-    const val DESSERT = "Dessert"
-    const val SEAFOOD = "Seafood"
-    const val VEGETARIAN = "Vegetarian"
-    const val BEEF = "Beef"
-    const val CHICKEN = "Chicken"
-    const val PASTA = "Pasta"
-    const val PORK = "Pork"
-    const val LAMB = "Lamb"
-    const val STARTER = "Starter"
-    const val VEGAN = "Vegan"
-    const val SIDE = "Side"
-
-    val ALL = listOf(
-        BREAKFAST, DESSERT, SEAFOOD, VEGETARIAN, BEEF,
-        CHICKEN, PASTA, PORK, LAMB, STARTER, VEGAN, SIDE
-    )
+    val ALL = listOf("Breakfast", "Dessert", "Seafood", "Vegetarian", "Beef", "Chicken", "Pasta", "Pork", "Lamb", "Starter", "Vegan", "Side")
 }
 
 object RecipeAreas {
-    const val MEXICAN = "Mexican"
-    const val ITALIAN = "Italian"
-    const val AMERICAN = "American"
-    const val BRITISH = "British"
-    const val FRENCH = "French"
-    const val CHINESE = "Chinese"
-    const val JAPANESE = "Japanese"
-    const val INDIAN = "Indian"
-    const val THAI = "Thai"
-    const val SPANISH = "Spanish"
-    const val GREEK = "Greek"
-
-    val ALL = listOf(
-        MEXICAN, ITALIAN, AMERICAN, BRITISH, FRENCH,
-        CHINESE, JAPANESE, INDIAN, THAI, SPANISH, GREEK
-    )
+    val ALL = listOf("Mexican", "Italian", "American", "British", "French", "Chinese", "Japanese", "Indian", "Thai", "Spanish", "Greek")
 }
 
 data class RecipeFilter(
@@ -106,10 +75,4 @@ data class RecipeFilter(
     val sortBy: SortOption = SortOption.POPULARITY
 )
 
-enum class SortOption {
-    POPULARITY,
-    TIME,
-    HEALTH_SCORE,
-    CALORIES,
-    PRICE
-}
+enum class SortOption { POPULARITY, TIME, HEALTH_SCORE, CALORIES, PRICE }

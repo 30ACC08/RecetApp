@@ -4,9 +4,9 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import androidx.recyclerview.widget.RecyclerView
-import com.example.recetapp.databinding.ItemUserBinding
 import com.example.recetapp.data.model.User
 import com.example.recetapp.data.model.UserRole
+import com.example.recetapp.databinding.ItemUserBinding
 
 class UsersAdapter(
     private val users: List<User>,
@@ -16,13 +16,13 @@ class UsersAdapter(
 ) : RecyclerView.Adapter<UsersAdapter.UserViewHolder>() {
 
     inner class UserViewHolder(private val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root) {
-        fun bind(user: User, position: Int) {
-            binding.tvUserNumber.text = "Usuario #${position + 1}"
+        fun bind(user: User) {
+            binding.tvUserNumber.text = "Usuario #${adapterPosition + 1}"
             binding.tvUserName.text = user.nombre
             binding.tvUserEmail.text = user.email
-            binding.tvUserId.text = "ID: ${user.id.take(8)}..."
+            binding.tvUserId.text = "ID: ${user.id}"
 
-            // Mostrar badge de rol
+            // Badge ADMIN
             if (user.rol == UserRole.ADMIN) {
                 binding.tvUserRole.visibility = View.VISIBLE
                 binding.tvUserRole.text = "ADMIN"
@@ -30,17 +30,11 @@ class UsersAdapter(
                 binding.tvUserRole.visibility = View.GONE
             }
 
-            // Mostrar botones solo si es admin
+            // Botones de acción (solo si es admin)
             if (isAdmin) {
                 binding.llActions.visibility = View.VISIBLE
-
-                binding.btnEdit.setOnClickListener {
-                    onEditClick(user)
-                }
-
-                binding.btnDelete.setOnClickListener {
-                    onDeleteClick(user)
-                }
+                binding.btnEdit.setOnClickListener { onEditClick(user) }
+                binding.btnDelete.setOnClickListener { onDeleteClick(user) }
             } else {
                 binding.llActions.visibility = View.GONE
             }
@@ -53,7 +47,7 @@ class UsersAdapter(
     }
 
     override fun onBindViewHolder(holder: UserViewHolder, position: Int) {
-        holder.bind(users[position], position)
+        holder.bind(users[position])
     }
 
     override fun getItemCount() = users.size

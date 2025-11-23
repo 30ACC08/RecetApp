@@ -6,6 +6,7 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
@@ -13,97 +14,67 @@ import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentPerfilBinding
 import com.example.recetapp.data.model.UserRole
 import com.example.recetapp.ui.viewmodel.AuthViewModel
+import com.example.recetapp.ui.viewmodel.RecipeViewModel
 import kotlinx.coroutines.launch
 
 class PerfilFragment : Fragment() {
 
     private var _binding: FragmentPerfilBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: AuthViewModel by viewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+    private val recipeViewModel: RecipeViewModel by activityViewModels()
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentPerfilBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
-
         loadUserData()
         setupClickListeners()
+
+        // Cargar favoritos para mostrar el número
+        recipeViewModel.loadFavorites()
+        recipeViewModel.favorites.observe(viewLifecycleOwner) { favs ->
+            binding.tvFavoritos.text = favs.size.toString()
+            // Actualizar también el texto de la lista inferior si aplica
+            val textFav = binding.llFavoritos.getChildAt(1) as? android.widget.TextView
+            textFav?.text = favs.size.toString()
+        }
     }
 
     private fun loadUserData() {
-        lifecycleScope.launch {
-            viewModel.loadCurrentUser()
-        }
-
-        viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+        lifecycleScope.launch { authViewModel.loadCurrentUser() }
+        authViewModel.currentUser.observe(viewLifecycleOwner) { user ->
             if (user != null) {
-                android.util.Log.d("PerfilFragment", "Usuario cargado: ${user.nombre}, Rol: ${user.rol}")
-
                 binding.tvNombre.text = user.nombre
-
                 if (user.rol == UserRole.ADMIN) {
-                    android.util.Log.d("PerfilFragment", "Mostrando panel de administrador")
                     binding.tvTipo.text = "Administrador del Sistema"
                     binding.tvTipo.setTextColor(resources.getColor(R.color.error, null))
                     binding.llAdmin.visibility = View.VISIBLE
                 } else {
-                    android.util.Log.d("PerfilFragment", "Usuario normal")
                     binding.tvTipo.text = getString(R.string.chef_aficionada)
                     binding.llAdmin.visibility = View.GONE
                 }
-            } else {
-                android.util.Log.e("PerfilFragment", "Usuario es null")
-                Toast.makeText(context, "Error al cargar perfil", Toast.LENGTH_SHORT).show()
             }
         }
     }
 
     private fun setupClickListeners() {
-        binding.llMisRecetas.setOnClickListener {
-            Toast.makeText(context, "Mis Recetas", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.llFavoritos.setOnClickListener {
-            findNavController().navigate(R.id.favoritosFragment)
-        }
-
-        binding.llSiguiendo.setOnClickListener {
-            Toast.makeText(context, "Siguiendo", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.llResenas.setOnClickListener {
-            Toast.makeText(context, "Reseñas", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.llAdmin.setOnClickListener {
-            android.util.Log.d("PerfilFragment", "Navegando a panel de admin")
-            findNavController().navigate(R.id.action_perfilFragment_to_adminFragment)
-        }
-
-        binding.llNotificaciones.setOnClickListener {
-            Toast.makeText(context, "Notificaciones", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.llPreferencias.setOnClickListener {
-            Toast.makeText(context, "Preferencias", Toast.LENGTH_SHORT).show()
-        }
-
-        binding.llAyuda.setOnClickListener {
-            Toast.makeText(context, "Ayuda", Toast.LENGTH_SHORT).show()
-        }
-
+        binding.llFavoritos.setOnClickListener { findNavController().navigate(R.id.favoritosFragment) }
+        binding.llAdmin.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_adminFragment) }
         binding.llCerrarSesion.setOnClickListener {
-            viewModel.logout()
-            Toast.makeText(context, "Sesión cerrada", Toast.LENGTH_SHORT).show()
+            authViewModel.logout()
             findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
         }
+        // Otros botones
+        binding.llMisRecetas.setOnClickListener { Toast.makeText(context, "Mis Recetas", Toast.LENGTH_SHORT).show() }
+        binding.llSiguiendo.setOnClickListener { Toast.makeText(context, "Siguiendo", Toast.LENGTH_SHORT).show() }
+        binding.llResenas.setOnClickListener { Toast.makeText(context, "Reseñas", Toast.LENGTH_SHORT).show() }
+        binding.llNotificaciones.setOnClickListener { Toast.makeText(context, "Notificaciones", Toast.LENGTH_SHORT).show() }
+        binding.llPreferencias.setOnClickListener { Toast.makeText(context, "Preferencias", Toast.LENGTH_SHORT).show() }
+        binding.llAyuda.setOnClickListener { Toast.makeText(context, "Ayuda", Toast.LENGTH_SHORT).show() }
     }
 
     override fun onDestroyView() {
