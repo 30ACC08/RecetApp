@@ -7,7 +7,6 @@
     android:layout_height="match_parent"
     android:background="@color/background_light">
 
-    <!-- ProgressBar -->
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
@@ -23,11 +22,12 @@
         android:layout_height="match_parent"
         android:fillViewport="true">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:orientation="vertical"
+            android:paddingBottom="80dp">
 
-            <!-- Header -->
             <TextView
                 android:id="@+id/tv_saludo"
                 android:layout_width="wrap_content"
@@ -37,25 +37,21 @@
                 android:text="@string/hola_chef"
                 android:textColor="@color/text_primary"
                 android:textSize="24sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                android:textStyle="bold" />
 
             <TextView
                 android:id="@+id/tv_pregunta"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
                 android:layout_marginTop="4dp"
                 android:text="@string/que_cocinamos_hoy"
                 android:textColor="@color/text_secondary"
-                android:textSize="14sp"
-                app:layout_constraintStart_toStartOf="@id/tv_saludo"
-                app:layout_constraintTop_toBottomOf="@id/tv_saludo" />
+                android:textSize="14sp" />
 
-            <!-- Barra de búsqueda -->
             <androidx.cardview.widget.CardView
                 android:id="@+id/cv_buscar"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="56dp"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="24dp"
@@ -64,10 +60,7 @@
                 android:focusable="true"
                 android:foreground="?android:attr/selectableItemBackground"
                 app:cardCornerRadius="12dp"
-                app:cardElevation="2dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_pregunta">
+                app:cardElevation="2dp">
 
                 <LinearLayout
                     android:layout_width="match_parent"
@@ -84,147 +77,74 @@
                         app:tint="@color/text_hint" />
 
                     <TextView
-                        android:layout_width="0dp"
+                        android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:layout_weight="1"
                         android:text="@string/buscar_recetas"
                         android:textColor="@color/text_hint"
                         android:textSize="16sp" />
-
                 </LinearLayout>
             </androidx.cardview.widget.CardView>
 
-            <!-- Categorías -->
             <TextView
-                android:id="@+id/tv_categorias"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="24dp"
-                android:text="@string/categorias"
+                android:text="🔥 Tendencias"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/cv_buscar" />
+                android:textStyle="bold" />
 
-            <LinearLayout
-                android:id="@+id/ll_categorias"
-                android:layout_width="0dp"
-                android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:gravity="center"
-                android:orientation="horizontal"
-                android:paddingStart="24dp"
-                android:paddingEnd="24dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_categorias">
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:background="@android:color/holo_orange_light"
-                    android:gravity="center"
-                    android:text="@string/populares"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:background="@android:color/holo_blue_light"
-                    android:gravity="center"
-                    android:text="@string/rapidas"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_marginEnd="8dp"
-                    android:layout_weight="1"
-                    android:background="@android:color/holo_green_light"
-                    android:gravity="center"
-                    android:text="@string/saludables"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-
-                <TextView
-                    android:layout_width="0dp"
-                    android:layout_height="80dp"
-                    android:layout_weight="1"
-                    android:background="@android:color/holo_purple"
-                    android:gravity="center"
-                    android:text="@string/familia"
-                    android:textColor="@color/white"
-                    android:textStyle="bold" />
-
-            </LinearLayout>
-
-            <!-- Recetas Destacadas -->
-            <TextView
-                android:id="@+id/tv_destacadas"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginStart="24dp"
-                android:layout_marginTop="24dp"
-                android:text="@string/recetas_destacadas"
-                android:textColor="@color/text_primary"
-                android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/ll_categorias" />
-
-            <!-- RecyclerView Horizontal de Destacadas -->
             <androidx.recyclerview.widget.RecyclerView
                 android:id="@+id/rv_featured_recipes"
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
+                android:layout_marginTop="12dp"
                 android:clipToPadding="false"
                 android:orientation="horizontal"
                 android:paddingStart="16dp"
                 android:paddingEnd="16dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_destacadas"
                 tools:listitem="@layout/item_recipe_compact" />
 
-            <!-- Texto de recomendadas -->
             <TextView
-                android:id="@+id/tv_recomendadas"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:layout_marginStart="24dp"
                 android:layout_marginTop="24dp"
-                android:text="Para ti"
+                android:text="🍳 Para empezar el día"
                 android:textColor="@color/text_primary"
                 android:textSize="18sp"
-                android:textStyle="bold"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/rv_featured_recipes" />
+                android:textStyle="bold" />
 
-            <!-- RecyclerView Grid de Recomendadas -->
             <androidx.recyclerview.widget.RecyclerView
-                android:id="@+id/rv_recommended_recipes"
-                android:layout_width="0dp"
+                android:id="@+id/rv_breakfast_recipes"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginBottom="16dp"
+                android:layout_marginTop="12dp"
+                android:clipToPadding="false"
+                android:orientation="horizontal"
+                android:paddingStart="16dp"
+                android:paddingEnd="16dp"
+                tools:listitem="@layout/item_recipe_compact" />
+
+            <TextView
+                android:layout_width="wrap_content"
+                android:layout_height="wrap_content"
+                android:layout_marginStart="24dp"
+                android:layout_marginTop="24dp"
+                android:text="🥗 Vida Saludable"
+                android:textColor="@color/text_primary"
+                android:textSize="18sp"
+                android:textStyle="bold" />
+
+            <androidx.recyclerview.widget.RecyclerView
+                android:id="@+id/rv_healthy_recipes"
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content"
+                android:layout_marginTop="12dp"
                 android:nestedScrollingEnabled="false"
-                app:layout_constraintBottom_toBottomOf="parent"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/tv_recomendadas"
                 tools:listitem="@layout/item_recipe" />
 
-        </androidx.constraintlayout.widget.ConstraintLayout>
-
+        </LinearLayout>
     </ScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>

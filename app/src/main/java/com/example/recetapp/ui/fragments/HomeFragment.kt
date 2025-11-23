@@ -6,9 +6,8 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.fragment.app.viewModels
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
-import androidx.recyclerview.widget.GridLayoutManager
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
 import com.example.recetapp.data.model.Recipe
@@ -21,16 +20,13 @@ class HomeFragment : Fragment() {
 
     private var _binding: FragmentHomeBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: RecipeViewModel by viewModels()
+    private val viewModel: RecipeViewModel by activityViewModels()
 
     private lateinit var featuredAdapter: RecipeCompactAdapter
-    private lateinit var recommendedAdapter: RecipeAdapter
+    private lateinit var breakfastAdapter: RecipeCompactAdapter
+    private lateinit var healthyAdapter: RecipeAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater,
-        container: ViewGroup?,
-        savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentHomeBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -42,81 +38,59 @@ class HomeFragment : Fragment() {
         setupClickListeners()
         setupObservers()
 
-        // Cargar datos iniciales
-        viewModel.loadFeaturedRecipes()
+        // Carga inicial completa
+        if (viewModel.featuredRecipes.value.isNullOrEmpty()) {
+            viewModel.loadHomeContent()
+        }
     }
 
     private fun setupRecyclerViews() {
-        // RecyclerView de recetas destacadas (horizontal)
-        featuredAdapter = RecipeCompactAdapter { recipe ->
-            navigateToDetail(recipe)
+        // 1. Tendencias (Horizontal)
+        featuredAdapter = RecipeCompactAdapter { navigateToDetail(it) }
+        binding.rvFeaturedRecipes.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = featuredAdapter
         }
 
-        // Verificar si existe rv_featured_recipes
-        try {
-            binding.rvFeaturedRecipes.apply {
-                layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
-                adapter = featuredAdapter
-            }
-        } catch (e: Exception) {
-            // Si no existe el RecyclerView, no hace nada
+        // 2. Desayunos (Horizontal)
+        breakfastAdapter = RecipeCompactAdapter { navigateToDetail(it) }
+        binding.rvBreakfastRecipes.apply {
+            layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
+            adapter = breakfastAdapter
         }
 
-        // RecyclerView de recetas recomendadas (grid)
-        recommendedAdapter = RecipeAdapter(
-            onRecipeClick = { recipe ->
-                navigateToDetail(recipe)
-            },
-            onFavoriteClick = { recipe ->
-                Toast.makeText(context, "Agregado a favoritos: ${recipe.name}", Toast.LENGTH_SHORT).show()
+        // 3. Saludables (Vertical)
+        healthyAdapter = RecipeAdapter(
+            onRecipeClick = { navigateToDetail(it) },
+            onFavoriteClick = {
+                viewModel.toggleFavorite(it)
+                Toast.makeText(context, "Actualizando favoritos...", Toast.LENGTH_SHORT).show()
             }
         )
-
-        // Verificar si existe rv_recommended_recipes
-        try {
-            binding.rvRecommendedRecipes.apply {
-                layoutManager = GridLayoutManager(context, 2)
-                adapter = recommendedAdapter
-            }
-        } catch (e: Exception) {
-            // Si no existe el RecyclerView, no hace nada
+        binding.rvHealthyRecipes.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = healthyAdapter
+            isNestedScrollingEnabled = false
         }
     }
 
     private fun setupClickListeners() {
-        binding.apply {
-            // Barra de búsqueda
-            try {
-                cvBuscar.setOnClickListener {
-                    findNavController().navigate(R.id.action_homeFragment_to_searchFragment)
-                }
-            } catch (e: Exception) {
-                // El elemento no existe en el layout
-            }
+        binding.cvBuscar.setOnClickListener {
+            findNavController().navigate(R.id.action_homeFragment_to_searchFragment)
         }
     }
 
     private fun setupObservers() {
-        // Recetas destacadas
-        viewModel.featuredRecipes.observe(viewLifecycleOwner) { recipes ->
-            featuredAdapter.submitList(recipes)
-            recommendedAdapter.submitList(recipes.take(6))
-        }
+        viewModel.featuredRecipes.observe(viewLifecycleOwner) { featuredAdapter.submitList(it) }
+        viewModel.breakfastRecipes.observe(viewLifecycleOwner) { breakfastAdapter.submitList(it) }
+        viewModel.healthyRecipes.observe(viewLifecycleOwner) { healthyAdapter.submitList(it) }
 
-        // Loading state
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            try {
-                binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-            } catch (e: Exception) {
-                // ProgressBar no existe
-            }
+            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
-        // Error handling
-        viewModel.error.observe(viewLifecycleOwner) { error ->
-            error?.let {
-                Toast.makeText(context, it, Toast.LENGTH_LONG).show()
-            }
+        viewModel.error.observe(viewLifecycleOwner) {
+            if (!it.isNullOrBlank()) Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
         }
     }
 

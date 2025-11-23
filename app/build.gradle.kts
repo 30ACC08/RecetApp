@@ -80,4 +80,8 @@ dependencies {
 
     // Parcelize para Parcelable automático
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
+    // TRADUCTOR GOOGLE ML KIT
+    implementation("com.google.mlkit:translate:17.0.2")
+    // Para usar await() con tareas de Google
+    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }

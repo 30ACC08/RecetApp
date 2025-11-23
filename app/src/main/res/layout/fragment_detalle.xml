@@ -5,14 +5,15 @@
     xmlns:tools="http://schemas.android.com/tools"
     android:layout_width="match_parent"
     android:layout_height="match_parent"
-    android:background="@color/white">
+    android:background="@color/white"
+    tools:context=".ui.fragments.DetalleFragment">
 
-    <!-- ProgressBar -->
     <ProgressBar
         android:id="@+id/progress_bar"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:visibility="gone"
+        android:elevation="10dp"
         app:layout_constraintBottom_toBottomOf="parent"
         app:layout_constraintEnd_toEndOf="parent"
         app:layout_constraintStart_toStartOf="parent"
@@ -26,107 +27,70 @@
 
         <androidx.constraintlayout.widget.ConstraintLayout
             android:layout_width="match_parent"
-            android:layout_height="wrap_content">
+            android:layout_height="wrap_content"
+            android:paddingBottom="32dp">
 
-            <!-- Imagen de la receta -->
             <ImageView
                 android:id="@+id/iv_recipe_image"
                 android:layout_width="0dp"
-                android:layout_height="300dp"
+                android:layout_height="250dp"
                 android:contentDescription="@string/imagen_receta"
                 android:scaleType="centerCrop"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toTopOf="parent"
-                tools:src="@android:color/holo_orange_dark" />
+                tools:src="@android:color/holo_orange_light" />
 
-            <!-- Botón Atrás -->
             <ImageButton
                 android:id="@+id/btn_back"
-                android:layout_width="48dp"
-                android:layout_height="48dp"
+                android:layout_width="40dp"
+                android:layout_height="40dp"
                 android:layout_marginStart="16dp"
                 android:layout_marginTop="16dp"
-                android:background="@color/white"
+                android:background="@drawable/ic_launcher_background"
+                android:backgroundTint="@color/white"
                 android:contentDescription="@string/volver"
-                android:padding="12dp"
+                android:padding="8dp"
                 android:src="@drawable/ic_arrow_back"
+                android:elevation="4dp"
                 app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
+                app:layout_constraintTop_toTopOf="parent"
+                app:tint="@color/text_primary" />
 
-            <!-- Badge de fuente -->
-            <TextView
-                android:id="@+id/tv_source"
+            <com.google.android.material.floatingactionbutton.FloatingActionButton
+                android:id="@+id/iv_favorito"
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
-                android:layout_marginTop="16dp"
-                android:layout_marginEnd="16dp"
-                android:background="@color/orange_primary"
-                android:paddingStart="12dp"
-                android:paddingTop="6dp"
-                android:paddingEnd="12dp"
-                android:paddingBottom="6dp"
-                android:text="MealDB"
-                android:textColor="@color/white"
-                android:textSize="11sp"
-                android:textStyle="bold"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toTopOf="parent" />
-
-            <!-- Botones superiores -->
-            <LinearLayout
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="16dp"
-                android:layout_marginBottom="16dp"
-                android:orientation="horizontal"
+                android:layout_marginEnd="24dp"
+                android:contentDescription="@string/agregar_favorito"
+                android:src="@drawable/ic_favorite"
+                app:backgroundTint="@color/white"
+                app:tint="@color/text_secondary"
+                app:elevation="6dp"
+                app:fabSize="normal"
                 app:layout_constraintBottom_toBottomOf="@id/iv_recipe_image"
-                app:layout_constraintEnd_toEndOf="parent">
+                app:layout_constraintEnd_toEndOf="parent"
+                app:layout_constraintTop_toBottomOf="@id/iv_recipe_image" />
 
-                <ImageButton
-                    android:id="@+id/btn_share"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:layout_marginEnd="8dp"
-                    android:background="@color/white"
-                    android:contentDescription="Compartir"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_search"
-                    app:tint="@color/orange_primary" />
-
-                <ImageButton
-                    android:id="@+id/iv_favorito"
-                    android:layout_width="48dp"
-                    android:layout_height="48dp"
-                    android:background="@color/white"
-                    android:contentDescription="@string/agregar_favorito"
-                    android:padding="12dp"
-                    android:src="@drawable/ic_favorite"
-                    app:tint="@color/error" />
-
-            </LinearLayout>
-
-            <!-- Contenido -->
             <LinearLayout
-                android:layout_width="0dp"
+                android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
-                android:padding="24dp"
+                android:paddingHorizontal="24dp"
+                android:paddingTop="12dp"
                 app:layout_constraintEnd_toEndOf="parent"
                 app:layout_constraintStart_toStartOf="parent"
                 app:layout_constraintTop_toBottomOf="@id/iv_recipe_image">
 
-                <!-- Nombre -->
                 <TextView
                     android:id="@+id/tv_recipe_name"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
                     android:textColor="@color/text_primary"
-                    android:textSize="28sp"
+                    android:textSize="26sp"
                     android:textStyle="bold"
-                    tools:text="Tacos al Pastor" />
+                    tools:text="Título de la Receta" />
 
-                <!-- Categoría y área -->
                 <LinearLayout
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
@@ -137,12 +101,10 @@
                         android:id="@+id/tv_category"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
-                        android:background="@color/background_gray"
-                        android:paddingStart="12dp"
-                        android:paddingTop="6dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="6dp"
-                        android:textColor="@color/text_primary"
+                        android:background="@android:color/darker_gray"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         tools:text="Desayuno" />
@@ -152,66 +114,74 @@
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:layout_marginStart="8dp"
-                        android:background="@color/background_gray"
-                        android:paddingStart="12dp"
-                        android:paddingTop="6dp"
-                        android:paddingEnd="12dp"
-                        android:paddingBottom="6dp"
-                        android:textColor="@color/text_primary"
+                        android:background="@android:color/darker_gray"
+                        android:paddingHorizontal="8dp"
+                        android:paddingVertical="4dp"
+                        android:textColor="@color/white"
                         android:textSize="12sp"
                         android:textStyle="bold"
                         tools:text="Mexicana" />
-
                 </LinearLayout>
 
-                <!-- Información básica -->
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="12dp">
+
+                    <TextView
+                        android:id="@+id/tv_basic_info"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="14sp"
+                        tools:text="⏱ 30 min" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_translate"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="36dp"
+                        android:text="Traducir"
+                        android:textColor="@color/orange_primary"
+                        android:textSize="13sp"
+                        android:padding="0dp" />
+                </LinearLayout>
+
                 <TextView
-                    android:id="@+id/tv_basic_info"
+                    android:id="@+id/tv_source"
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    tools:text="⏱ 30 min  •  👥 4 porciones  •  ❤️ 85" />
+                    android:visibility="gone" />
 
-                <!-- Tags dietéticos -->
                 <LinearLayout
                     android:id="@+id/ll_diet_tags"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
+                    android:visibility="gone">
                     <TextView
                         android:id="@+id/tv_diet_tags"
                         android:layout_width="wrap_content"
                         android:layout_height="wrap_content"
                         android:textColor="@color/success"
-                        android:textSize="13sp"
                         android:textStyle="bold"
-                        tools:text="🥬 Vegetariano • 🌱 Vegano • 🌾 Sin Gluten" />
-
+                        tools:text="Vegano" />
                 </LinearLayout>
 
-                <!-- Botón video (si existe) -->
-                <com.google.android.material.button.MaterialButton
-                    android:id="@+id/btn_watch_video"
-                    style="@style/Widget.Material3.Button.OutlinedButton"
+                <View
                     android:layout_width="match_parent"
-                    android:layout_height="48dp"
+                    android:layout_height="1dp"
+                    android:background="@color/divider"
                     android:layout_marginTop="16dp"
-                    android:text="▶ Ver video en YouTube"
-                    android:visibility="gone"
-                    app:cornerRadius="12dp"
-                    tools:visibility="visible" />
+                    android:layout_marginBottom="16dp" />
 
-                <!-- Ingredientes -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
                     android:text="@string/ingredientes"
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
@@ -219,15 +189,14 @@
 
                 <TextView
                     android:id="@+id/tv_ingredientes"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
+                    android:layout_marginTop="8dp"
                     android:lineSpacingExtra="4dp"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    tools:text="• 500g carne de cerdo\n• 3 chiles guajillo\n• 1 piña pequeña" />
+                    android:textSize="15sp"
+                    tools:text="• Ingrediente 1" />
 
-                <!-- Preparación -->
                 <TextView
                     android:layout_width="wrap_content"
                     android:layout_height="wrap_content"
@@ -239,129 +208,56 @@
 
                 <TextView
                     android:id="@+id/tv_preparacion"
-                    android:layout_width="wrap_content"
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="12dp"
-                    android:lineSpacingExtra="6dp"
+                    android:layout_marginTop="8dp"
+                    android:lineSpacingMultiplier="1.3"
                     android:textColor="@color/text_secondary"
-                    android:textSize="14sp"
-                    tools:text="1. Marinar la carne\n2. Cocinar en el comal\n3. Servir caliente" />
+                    android:textSize="15sp"
+                    tools:text="1. Paso uno..." />
 
-                <!-- Información Nutricional -->
+                <com.google.android.material.button.MaterialButton
+                    android:id="@+id/btn_watch_video"
+                    style="@style/Widget.Material3.Button.OutlinedButton"
+                    android:layout_width="match_parent"
+                    android:layout_height="50dp"
+                    android:layout_marginTop="24dp"
+                    android:text="Ver video en YouTube"
+                    android:visibility="gone" />
+
                 <LinearLayout
                     android:id="@+id/ll_nutrition"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="24dp"
+                    android:layout_marginTop="16dp"
                     android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <TextView
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:text="Información Nutricional"
-                        android:textColor="@color/text_primary"
-                        android:textSize="20sp"
-                        android:textStyle="bold" />
-
-                    <androidx.cardview.widget.CardView
-                        android:layout_width="match_parent"
-                        android:layout_height="wrap_content"
-                        android:layout_marginTop="12dp"
-                        app:cardBackgroundColor="@color/background_gray"
-                        app:cardCornerRadius="12dp"
-                        app:cardElevation="0dp">
-
-                        <LinearLayout
-                            android:layout_width="match_parent"
-                            android:layout_height="wrap_content"
-                            android:orientation="vertical"
-                            android:padding="16dp">
-
-                            <TextView
-                                android:id="@+id/tv_calories"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="@color/text_primary"
-                                android:textSize="24sp"
-                                android:textStyle="bold"
-                                tools:text="350 kcal" />
-
-                            <View
-                                android:layout_width="match_parent"
-                                android:layout_height="1dp"
-                                android:layout_marginTop="12dp"
-                                android:layout_marginBottom="12dp"
-                                android:background="@color/divider" />
-
-                            <TextView
-                                android:id="@+id/tv_protein"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                tools:text="Proteínas: 25g" />
-
-                            <TextView
-                                android:id="@+id/tv_fat"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                tools:text="Grasas: 15g" />
-
-                            <TextView
-                                android:id="@+id/tv_carbs"
-                                android:layout_width="wrap_content"
-                                android:layout_height="wrap_content"
-                                android:layout_marginTop="4dp"
-                                android:textColor="@color/text_secondary"
-                                android:textSize="14sp"
-                                tools:text="Carbohidratos: 35g" />
-
-                        </LinearLayout>
-
-                    </androidx.cardview.widget.CardView>
-
+                    android:visibility="gone">
+                    <TextView android:layout_width="wrap_content" android:layout_height="wrap_content" android:text="Nutrición" android:textStyle="bold" />
+                    <TextView android:id="@+id/tv_calories" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_protein" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_fat" android:layout_width="wrap_content" android:layout_height="wrap_content" />
+                    <TextView android:id="@+id/tv_carbs" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <!-- Precio -->
                 <LinearLayout
                     android:id="@+id/ll_price"
                     android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:layout_marginTop="16dp"
-                    android:orientation="vertical"
-                    android:visibility="gone"
-                    tools:visibility="visible">
-
-                    <TextView
-                        android:id="@+id/tv_price"
-                        android:layout_width="wrap_content"
-                        android:layout_height="wrap_content"
-                        android:textColor="@color/text_secondary"
-                        android:textSize="13sp"
-                        tools:text="Precio estimado por porción: $2.50" />
-
+                    android:layout_marginTop="8dp"
+                    android:visibility="gone">
+                    <TextView android:id="@+id/tv_price" android:layout_width="wrap_content" android:layout_height="wrap_content" />
                 </LinearLayout>
 
-                <!-- Botón Comenzar -->
                 <com.google.android.material.button.MaterialButton
                     android:id="@+id/btn_comenzar_cocinar"
                     android:layout_width="match_parent"
                     android:layout_height="56dp"
                     android:layout_marginTop="32dp"
-                    android:layout_marginBottom="32dp"
                     android:text="@string/comenzar_cocinar"
                     android:textSize="16sp"
                     app:cornerRadius="12dp" />
 
             </LinearLayout>
-
         </androidx.constraintlayout.widget.ConstraintLayout>
-
     </ScrollView>
-
 </androidx.constraintlayout.widget.ConstraintLayout>
