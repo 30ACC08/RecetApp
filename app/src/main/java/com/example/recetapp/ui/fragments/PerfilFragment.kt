@@ -7,11 +7,13 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentPerfilBinding
 import com.example.recetapp.data.model.UserRole
 import com.example.recetapp.ui.viewmodel.AuthViewModel
+import kotlinx.coroutines.launch
 
 class PerfilFragment : Fragment() {
 
@@ -36,20 +38,29 @@ class PerfilFragment : Fragment() {
     }
 
     private fun loadUserData() {
-        viewModel.loadCurrentUser()
+        lifecycleScope.launch {
+            viewModel.loadCurrentUser()
+        }
 
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
             if (user != null) {
+                android.util.Log.d("PerfilFragment", "Usuario cargado: ${user.nombre}, Rol: ${user.rol}")
+
                 binding.tvNombre.text = user.nombre
 
                 if (user.rol == UserRole.ADMIN) {
+                    android.util.Log.d("PerfilFragment", "Mostrando panel de administrador")
                     binding.tvTipo.text = "Administrador del Sistema"
                     binding.tvTipo.setTextColor(resources.getColor(R.color.error, null))
                     binding.llAdmin.visibility = View.VISIBLE
                 } else {
+                    android.util.Log.d("PerfilFragment", "Usuario normal")
                     binding.tvTipo.text = getString(R.string.chef_aficionada)
                     binding.llAdmin.visibility = View.GONE
                 }
+            } else {
+                android.util.Log.e("PerfilFragment", "Usuario es null")
+                Toast.makeText(context, "Error al cargar perfil", Toast.LENGTH_SHORT).show()
             }
         }
     }
@@ -72,6 +83,7 @@ class PerfilFragment : Fragment() {
         }
 
         binding.llAdmin.setOnClickListener {
+            android.util.Log.d("PerfilFragment", "Navegando a panel de admin")
             findNavController().navigate(R.id.action_perfilFragment_to_adminFragment)
         }
 
