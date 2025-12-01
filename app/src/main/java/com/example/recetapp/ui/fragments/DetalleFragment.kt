@@ -17,7 +17,7 @@ import com.example.recetapp.data.model.RecipeSource
 import com.example.recetapp.data.model.RecipeTranslations
 import com.example.recetapp.databinding.FragmentDetalleBinding
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
-import com.google.firebase.auth.FirebaseAuth // <--- Importante
+import com.google.firebase.auth.FirebaseAuth
 
 class DetalleFragment : Fragment() {
 
