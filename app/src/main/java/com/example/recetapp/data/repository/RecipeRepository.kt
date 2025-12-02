@@ -1,7 +1,6 @@
 package com.example.recetapp.data.repository
 
 import android.net.Uri
-import android.util.Log
 import com.example.recetapp.data.mappers.*
 import com.example.recetapp.data.model.*
 import com.example.recetapp.data.network.ApiManager
@@ -22,7 +21,7 @@ class RecipeRepository {
     private val auth = FirebaseAuth.getInstance()
     private val storage = FirebaseStorage.getInstance()
 
-    // === NUEVO: Helper para obtener nombre ===
+    // === Helper ===
     suspend fun getCurrentUserName(): String {
         val uid = auth.currentUser?.uid ?: return "Anónimo"
         return try {
@@ -31,7 +30,7 @@ class RecipeRepository {
         } catch (e: Exception) { "Anónimo" }
     }
 
-    // === CRUD ===
+    // === CRUD Recetas ===
     suspend fun uploadImage(imageUri: Uri): Result<String> {
         return try {
             val filename = UUID.randomUUID().toString()
@@ -46,7 +45,6 @@ class RecipeRepository {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("No logueado"))
             val recipeWithUser = recipe.copy(userId = userId)
-
             firestore.collection("usuarios").document(userId)
                 .collection("mis_recetas").document(recipe.id)
                 .set(recipeWithUser).await()
@@ -58,7 +56,6 @@ class RecipeRepository {
         return try {
             val userId = auth.currentUser?.uid ?: return Result.failure(Exception("No logueado"))
             if (recipe.userId != userId) return Result.failure(Exception("No tienes permiso"))
-
             firestore.collection("usuarios").document(userId)
                 .collection("mis_recetas").document(recipe.id)
                 .set(recipe).await()
@@ -85,18 +82,16 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // === BÚSQUEDA GLOBAL ===
+    // === BÚSQUEDA ===
     suspend fun searchRecipes(filter: RecipeFilter): Result<List<Recipe>> {
         return try {
             val recipes = mutableListOf<Recipe>()
             coroutineScope {
-                // 1. Firestore (Usuarios)
                 val firestoreDeferred = async {
                     try {
                         val query = firestore.collectionGroup("mis_recetas")
                         val snapshot = query.get().await()
                         val allUserRecipes = snapshot.toObjects(Recipe::class.java)
-
                         allUserRecipes.filter { r ->
                             val matchesQuery = filter.query.isBlank() || r.name.contains(filter.query, ignoreCase = true)
                             val matchesCategory = filter.category == null || r.category.equals(filter.category, ignoreCase = true)
@@ -105,7 +100,6 @@ class RecipeRepository {
                     } catch (e: Exception) { emptyList<Recipe>() }
                 }
 
-                // 2. MealDB
                 val mealDbDeferred = async {
                     if (filter.source != RecipeSource.SPOONACULAR) {
                         val list = mutableListOf<Recipe>()
@@ -122,7 +116,6 @@ class RecipeRepository {
                     } else emptyList()
                 }
 
-                // 3. Spoonacular
                 val spoonDeferred = async {
                     if (filter.source != RecipeSource.THEMEALDB) {
                         val diet = if(filter.vegetarian == true) "vegetarian" else null
@@ -143,7 +136,7 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // ... Resto de funciones (Favoritos, etc.) se mantienen igual ...
+    // === FAVORITOS ===
     suspend fun isFavorite(recipeId: String): Boolean {
         val userId = auth.currentUser?.uid ?: return false
         return try {
@@ -166,6 +159,8 @@ class RecipeRepository {
             Result.success(snapshot.toObjects(Recipe::class.java))
         } catch (e: Exception) { Result.failure(e) }
     }
+
+    // === APIS EXTERNAS ===
     suspend fun getRandomRecipes(count: Int): Result<List<Recipe>> {
         val list = mutableListOf<Recipe>()
         try {
@@ -186,7 +181,6 @@ class RecipeRepository {
                 val r = spoonacularApi.getRecipeById(id.removePrefix("spoon_").toInt(), SpoonacularApi.API_KEY).body()
                 if (r != null) Result.success(r.toRecipe()) else Result.failure(Exception("No encontrada"))
             } else {
-                // Para recetas de usuario, el objeto ya debería venir completo desde la lista o Firestore
                 Result.failure(Exception("Cargado localmente"))
             }
         } catch(e: Exception) { Result.failure(e) }
@@ -194,4 +188,82 @@ class RecipeRepository {
     suspend fun getCategories() = try {
         Result.success(mealDbApi.getCategories().body()?.categories?.map { it.name } ?: emptyList())
     } catch(e:Exception) { Result.failure(e) }
+
+    // ==================== RESEÑAS / REVIEWS (CORREGIDO) ====================
+
+    // Esta función recibe 5 parámetros ahora. Asegúrate de copiar esto.
+    suspend fun addReview(recipeId: String, recipeName: String, recipeImageUrl: String, rating: Float, comment: String): Result<Boolean> {
+        return try {
+            val user = auth.currentUser ?: return Result.failure(Exception("Debes iniciar sesión"))
+
+            val userDoc = firestore.collection("usuarios").document(user.uid).get().await()
+            val userName = userDoc.getString("nombre") ?: "Anónimo"
+            val userPhoto = userDoc.getString("photoUrl") ?: ""
+
+            val reviewId = UUID.randomUUID().toString()
+            val review = Review(
+                id = reviewId,
+                recipeId = recipeId,
+                recipeName = recipeName,
+                recipeImageUrl = recipeImageUrl,
+                userId = user.uid,
+                userName = userName,
+                userPhotoUrl = userPhoto,
+                rating = rating,
+                comment = comment,
+                timestamp = java.util.Date()
+            )
+
+            firestore.collection("recetas_data").document(recipeId)
+                .collection("reviews").document(reviewId)
+                .set(review).await()
+
+            Result.success(true)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
+    // Esta función faltaba (Collection Group)
+    suspend fun getUserReviews(): Result<List<Review>> {
+        return try {
+            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("No logueado"))
+            val snapshot = firestore.collectionGroup("reviews")
+                .whereEqualTo("userId", userId)
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .get().await()
+            Result.success(snapshot.toObjects(Review::class.java))
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    // Esta función faltaba
+    suspend fun deleteReview(recipeId: String, reviewId: String): Result<Boolean> {
+        return try {
+            firestore.collection("recetas_data").document(recipeId)
+                .collection("reviews").document(reviewId)
+                .delete().await()
+            Result.success(true)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    // Esta función faltaba
+    suspend fun updateReview(recipeId: String, reviewId: String, newRating: Float, newComment: String): Result<Boolean> {
+        return try {
+            val updates = mapOf("rating" to newRating, "comment" to newComment, "timestamp" to java.util.Date())
+            firestore.collection("recetas_data").document(recipeId)
+                .collection("reviews").document(reviewId)
+                .update(updates).await()
+            Result.success(true)
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    suspend fun getReviews(recipeId: String): Result<List<Review>> {
+        return try {
+            val snapshot = firestore.collection("recetas_data").document(recipeId)
+                .collection("reviews")
+                .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
+                .get().await()
+            Result.success(snapshot.toObjects(Review::class.java))
+        } catch (e: Exception) { Result.success(emptyList()) }
+    }
 }

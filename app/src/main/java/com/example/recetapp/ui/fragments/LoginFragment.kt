@@ -7,12 +7,10 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentLoginBinding
 import com.example.recetapp.ui.viewmodel.AuthViewModel
-import kotlinx.coroutines.launch
 
 class LoginFragment : Fragment() {
 
@@ -41,11 +39,18 @@ class LoginFragment : Fragment() {
         viewModel.loginResult.observe(viewLifecycleOwner) { result ->
             result.onSuccess { user ->
                 Toast.makeText(context, "Bienvenido ${user.nombre}", Toast.LENGTH_SHORT).show()
-                android.util.Log.d("LoginFragment", "Navegando a home. Usuario: ${user.nombre}, Rol: ${user.rol}")
                 findNavController().navigate(R.id.action_loginFragment_to_homeFragment)
             }.onFailure { error ->
                 Toast.makeText(context, error.message, Toast.LENGTH_LONG).show()
-                android.util.Log.e("LoginFragment", "Error de login: ${error.message}")
+            }
+        }
+
+        // === NUEVO: Observar recuperación de contraseña ===
+        viewModel.resetPasswordResult.observe(viewLifecycleOwner) { result ->
+            result.onSuccess {
+                Toast.makeText(context, "Correo de recuperación enviado. Revisa tu bandeja.", Toast.LENGTH_LONG).show()
+            }.onFailure { error ->
+                Toast.makeText(context, "Error: ${error.message}", Toast.LENGTH_LONG).show()
             }
         }
 
@@ -70,9 +75,19 @@ class LoginFragment : Fragment() {
             val email = binding.etEmail.text.toString().trim()
             val password = binding.etPassword.text.toString()
             val rememberMe = binding.cbRecordarme.isChecked
-
-            android.util.Log.d("LoginFragment", "Intentando login con email: $email")
             viewModel.login(email, password, rememberMe)
+        }
+
+        // === NUEVO: Click en Olvidaste Contraseña ===
+        binding.tvOlvidePassword.setOnClickListener {
+            val email = binding.etEmail.text.toString().trim()
+            if (email.isEmpty()) {
+                binding.tilEmail.error = "Ingresa tu correo aquí primero"
+                Toast.makeText(context, "Ingresa tu correo para recuperar la contraseña", Toast.LENGTH_SHORT).show()
+            } else {
+                binding.tilEmail.error = null
+                viewModel.resetPassword(email)
+            }
         }
 
         binding.tvRegistrarse.setOnClickListener {

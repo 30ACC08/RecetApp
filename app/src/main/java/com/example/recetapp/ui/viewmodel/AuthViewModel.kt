@@ -1,7 +1,7 @@
 package com.example.recetapp.ui.viewmodel
 
 import android.app.Application
-import android.util.Log
+import android.net.Uri
 import androidx.lifecycle.AndroidViewModel
 import androidx.lifecycle.LiveData
 import androidx.lifecycle.MutableLiveData
@@ -26,7 +26,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _allUsers = MutableLiveData<List<User>>()
     val allUsers: LiveData<List<User>> = _allUsers
 
-    // Nuevo: Error general para mostrar en AdminFragment
     private val _generalError = MutableLiveData<String>()
     val generalError: LiveData<String> = _generalError
 
@@ -35,6 +34,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     private val _deleteResult = MutableLiveData<Result<Boolean>>()
     val deleteResult: LiveData<Result<Boolean>> = _deleteResult
+
+    private val _resetPasswordResult = MutableLiveData<Result<Boolean>>()
+    val resetPasswordResult: LiveData<Result<Boolean>> = _resetPasswordResult
 
     private val _currentUser = MutableLiveData<User?>()
     val currentUser: LiveData<User?> = _currentUser
@@ -70,7 +72,18 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    // CORREGIDO: Maneja el Result<List<User>> del repositorio
+    fun resetPassword(email: String) {
+        if (email.isBlank()) {
+            _validationError.value = "Ingresa tu correo para recuperar la contraseña"
+            return
+        }
+        _isLoading.value = true
+        viewModelScope.launch {
+            _resetPasswordResult.value = authRepository.sendPasswordResetEmail(email)
+            _isLoading.value = false
+        }
+    }
+
     fun loadAllUsers() {
         _isLoading.value = true
         viewModelScope.launch {
@@ -85,6 +98,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
+    // Actualización simple (solo nombre, usada por Admin)
     fun updateUser(userId: String, newNombre: String) {
         if (newNombre.length < 3) {
             _validationError.value = "Nombre muy corto"
@@ -95,6 +109,41 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             val result = authRepository.updateUser(userId, newNombre)
             _updateResult.value = result
             if (result.isSuccess) loadAllUsers()
+            _isLoading.value = false
+        }
+    }
+
+    // Actualización completa (Perfil propio con foto)
+    fun updateUserProfile(userId: String, newNombre: String, imageUri: Uri?) {
+        if (newNombre.length < 3) {
+            _validationError.value = "El nombre es muy corto"
+            return
+        }
+        _isLoading.value = true
+        viewModelScope.launch {
+            var photoUrl: String? = null
+
+            // 1. Si hay imagen, subirla
+            if (imageUri != null) {
+                val uploadResult = authRepository.uploadProfileImage(imageUri)
+                uploadResult.onSuccess { url ->
+                    photoUrl = url
+                }.onFailure {
+                    _isLoading.value = false
+                    _validationError.value = "Error subiendo imagen: ${it.message}"
+                    return@launch
+                }
+            }
+
+            // 2. Actualizar datos
+            val result = authRepository.updateUser(userId, newNombre, photoUrl)
+            _updateResult.value = result
+
+            // 3. Actualizar memoria local
+            if (result.isSuccess) {
+                _currentUser.value = result.getOrNull()
+            }
+
             _isLoading.value = false
         }
     }

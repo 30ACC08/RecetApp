@@ -6,17 +6,22 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
+import android.widget.RatingBar
 import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
 import com.example.recetapp.R
 import com.example.recetapp.data.model.RecipeSource
 import com.example.recetapp.data.model.RecipeTranslations
 import com.example.recetapp.databinding.FragmentDetalleBinding
+import com.example.recetapp.ui.adapters.ReviewAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
 
 class DetalleFragment : Fragment() {
@@ -24,6 +29,7 @@ class DetalleFragment : Fragment() {
     private var _binding: FragmentDetalleBinding? = null
     private val binding get() = _binding!!
     private val viewModel: RecipeViewModel by activityViewModels()
+    private val reviewAdapter = ReviewAdapter()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentDetalleBinding.inflate(inflater, container, false)
@@ -32,8 +38,18 @@ class DetalleFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        setupRecyclerView()
         setupClickListeners()
         observeRecipe()
+        setupReviewObservers()
+    }
+
+    private fun setupRecyclerView() {
+        binding.rvReviews.apply {
+            layoutManager = LinearLayoutManager(context)
+            adapter = reviewAdapter
+        }
     }
 
     private fun setupClickListeners() {
@@ -42,7 +58,8 @@ class DetalleFragment : Fragment() {
         binding.ivFavorito.setOnClickListener {
             viewModel.selectedRecipe.value?.let { recipe ->
                 viewModel.toggleFavorite(recipe)
-                val msg = if (viewModel.isRecipeFavorite.value == true) "Eliminado de favoritos" else "Añadido a favoritos"
+                // === CORRECCIÓN AQUÍ: Mensaje invertido arreglado ===
+                val msg = if (viewModel.isRecipeFavorite.value == true) "Añadido a favoritos" else "Eliminado de favoritos"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
         }
@@ -54,24 +71,32 @@ class DetalleFragment : Fragment() {
         binding.btnComenzarCocinar.setOnClickListener {
             Toast.makeText(context, "¡A cocinar!", Toast.LENGTH_SHORT).show()
         }
+
+        binding.btnAddReview.setOnClickListener {
+            if (FirebaseAuth.getInstance().currentUser == null) {
+                Toast.makeText(context, "Inicia sesión para opinar", Toast.LENGTH_SHORT).show()
+            } else {
+                showAddReviewDialog()
+            }
+        }
     }
 
     private fun observeRecipe() {
         viewModel.selectedRecipe.observe(viewLifecycleOwner) { recipe ->
             if (recipe == null) return@observe
 
+            viewModel.loadReviews(recipe.id)
             viewModel.checkIfFavorite(recipe.id)
+
             val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
 
             binding.apply {
                 tvRecipeName.text = recipe.name
-
                 tvCategory.text = RecipeTranslations.categoryName(recipe.category)
                 tvArea.text = RecipeTranslations.areaName(recipe.area)
 
                 Glide.with(this@DetalleFragment).load(recipe.imageUrl).centerCrop().into(ivRecipeImage)
 
-                // === CORRECCIÓN DE NOMBRE EN DETALLE ===
                 if (recipe.source == RecipeSource.USER) {
                     val autor = when {
                         recipe.userId == currentUserId -> "Mí"
@@ -106,21 +131,12 @@ class DetalleFragment : Fragment() {
                     btnWatchVideo.visibility = View.GONE
                 }
 
+                llNutrition.visibility = if (recipe.nutrition != null) View.VISIBLE else View.GONE
                 if (recipe.nutrition != null) {
-                    llNutrition.visibility = View.VISIBLE
                     tvCalories.text = "${recipe.nutrition.calories.toInt()} kcal"
                     tvProtein.text = "Prot: ${recipe.nutrition.protein.toInt()}g"
                     tvFat.text = "Grasa: ${recipe.nutrition.fat.toInt()}g"
                     tvCarbs.text = "Carbs: ${recipe.nutrition.carbs.toInt()}g"
-                } else {
-                    llNutrition.visibility = View.GONE
-                }
-
-                if (recipe.pricePerServing != null) {
-                    llPrice.visibility = View.VISIBLE
-                    tvPrice.text = "Costo: $${String.format("%.2f", recipe.pricePerServing / 100)}"
-                } else {
-                    llPrice.visibility = View.GONE
                 }
             }
         }
@@ -144,6 +160,40 @@ class DetalleFragment : Fragment() {
         viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
             binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         }
+    }
+
+    private fun setupReviewObservers() {
+        viewModel.reviews.observe(viewLifecycleOwner) { reviews ->
+            reviewAdapter.submitList(reviews)
+            binding.tvNoReviews.visibility = if (reviews.isEmpty()) View.VISIBLE else View.GONE
+            binding.rvReviews.visibility = if (reviews.isEmpty()) View.GONE else View.VISIBLE
+        }
+
+        viewModel.reviewUploadResult.observe(viewLifecycleOwner) { result ->
+            result.onSuccess {
+                Toast.makeText(context, "¡Reseña publicada!", Toast.LENGTH_SHORT).show()
+            }.onFailure {
+                Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
+            }
+        }
+    }
+
+    private fun showAddReviewDialog() {
+        val dialogView = LayoutInflater.from(context).inflate(R.layout.dialog_add_review, null)
+        val ratingBar = dialogView.findViewById<RatingBar>(R.id.rating_bar)
+        val etComment = dialogView.findViewById<EditText>(R.id.et_comment)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setView(dialogView)
+            .setPositiveButton("Publicar") { _, _ ->
+                val rating = ratingBar.rating
+                val comment = etComment.text.toString().trim()
+                viewModel.selectedRecipe.value?.id?.let { recipeId ->
+                    viewModel.submitReview(recipeId, rating, comment)
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     override fun onDestroyView() {

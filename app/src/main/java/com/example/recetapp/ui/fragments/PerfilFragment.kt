@@ -11,11 +11,13 @@ import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
+import com.bumptech.glide.Glide
 import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentPerfilBinding
 import com.example.recetapp.data.model.UserRole
 import com.example.recetapp.ui.viewmodel.AuthViewModel
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder // Necesario para el diálogo
 import kotlinx.coroutines.launch
 
 class PerfilFragment : Fragment() {
@@ -44,13 +46,10 @@ class PerfilFragment : Fragment() {
             textFavList?.text = favs.size.toString()
         }
 
-        // 2. Cargar MIS RECETAS (Corrección)
+        // 2. Cargar MIS RECETAS
         recipeViewModel.loadMyRecipes()
         recipeViewModel.myRecipes.observe(viewLifecycleOwner) { recipes ->
-            // Actualizar el contador grande
             binding.tvRecetas.text = recipes.size.toString()
-
-            // Actualizar el contador pequeño en la lista
             val textMyRecipesList = binding.llMisRecetas.getChildAt(1) as? android.widget.TextView
             textMyRecipesList?.text = recipes.size.toString()
         }
@@ -61,6 +60,16 @@ class PerfilFragment : Fragment() {
         authViewModel.currentUser.observe(viewLifecycleOwner) { user ->
             if (user != null) {
                 binding.tvNombre.text = user.nombre
+
+                // Cargar imagen
+                if (user.photoUrl.isNotEmpty()) {
+                    Glide.with(this)
+                        .load(user.photoUrl)
+                        .circleCrop()
+                        .placeholder(android.R.drawable.sym_def_app_icon)
+                        .into(binding.ivPerfil)
+                }
+
                 if (user.rol == UserRole.ADMIN) {
                     binding.tvTipo.text = getString(R.string.administrador)
                     binding.tvTipo.setTextColor(ContextCompat.getColor(requireContext(), R.color.error))
@@ -70,8 +79,6 @@ class PerfilFragment : Fragment() {
                     binding.tvTipo.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
                     binding.llAdmin.visibility = View.GONE
                 }
-            } else {
-                findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
             }
         }
     }
@@ -87,11 +94,33 @@ class PerfilFragment : Fragment() {
             findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
         }
 
+        // === CORRECCIÓN AQUÍ: Navegación a Mis Reseñas ===
+        binding.llResenas.setOnClickListener {
+            findNavController().navigate(R.id.userReviewsFragment)
+        }
+
         binding.llSiguiendo.setOnClickListener { Toast.makeText(context, "Próximamente: Siguiendo", Toast.LENGTH_SHORT).show() }
-        binding.llResenas.setOnClickListener { Toast.makeText(context, "Próximamente: Reseñas", Toast.LENGTH_SHORT).show() }
         binding.llNotificaciones.setOnClickListener { Toast.makeText(context, "Sin notificaciones", Toast.LENGTH_SHORT).show() }
-        binding.llPreferencias.setOnClickListener { Toast.makeText(context, "Configuración", Toast.LENGTH_SHORT).show() }
-        binding.llAyuda.setOnClickListener { Toast.makeText(context, "Ayuda", Toast.LENGTH_SHORT).show() }
+
+        binding.llPreferencias.setOnClickListener { showDeleteAccountDialog() }
+        binding.llAyuda.setOnClickListener { Toast.makeText(context, "Ayuda: contact@recetapp.com", Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun showDeleteAccountDialog() {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Configuración de Cuenta")
+            .setMessage("¿Deseas eliminar tu cuenta permanentemente? Esta acción no se puede deshacer.")
+            .setNegativeButton("Cancelar", null)
+            .setPositiveButton("ELIMINAR") { _, _ ->
+                val user = authViewModel.currentUser.value
+                if (user != null) {
+                    authViewModel.deleteUser(user.id, user.email)
+                    authViewModel.logout()
+                    findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
+                    Toast.makeText(context, "Cuenta eliminada", Toast.LENGTH_LONG).show()
+                }
+            }
+            .show()
     }
 
     override fun onDestroyView() {

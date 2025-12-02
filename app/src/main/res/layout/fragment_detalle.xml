@@ -25,62 +25,65 @@
         android:layout_height="match_parent"
         android:fillViewport="true">
 
-        <androidx.constraintlayout.widget.ConstraintLayout
+        <LinearLayout
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
+            android:orientation="vertical"
             android:paddingBottom="32dp">
 
-            <ImageView
-                android:id="@+id/iv_recipe_image"
-                android:layout_width="0dp"
-                android:layout_height="250dp"
-                android:contentDescription="@string/imagen_receta"
-                android:scaleType="centerCrop"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                tools:src="@android:color/holo_orange_light" />
+            <androidx.constraintlayout.widget.ConstraintLayout
+                android:layout_width="match_parent"
+                android:layout_height="wrap_content">
 
-            <ImageButton
-                android:id="@+id/btn_back"
-                android:layout_width="40dp"
-                android:layout_height="40dp"
-                android:layout_marginStart="16dp"
-                android:layout_marginTop="16dp"
-                android:background="@drawable/ic_launcher_background"
-                android:backgroundTint="@color/white"
-                android:contentDescription="@string/volver"
-                android:padding="8dp"
-                android:src="@drawable/ic_arrow_back"
-                android:elevation="4dp"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toTopOf="parent"
-                app:tint="@color/text_primary" />
+                <ImageView
+                    android:id="@+id/iv_recipe_image"
+                    android:layout_width="0dp"
+                    android:layout_height="250dp"
+                    android:contentDescription="@string/imagen_receta"
+                    android:scaleType="centerCrop"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    tools:src="@android:color/holo_orange_light" />
 
-            <com.google.android.material.floatingactionbutton.FloatingActionButton
-                android:id="@+id/iv_favorito"
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:layout_marginEnd="24dp"
-                android:contentDescription="@string/agregar_favorito"
-                android:src="@drawable/ic_favorite"
-                app:backgroundTint="@color/white"
-                app:tint="@color/text_secondary"
-                app:elevation="6dp"
-                app:fabSize="normal"
-                app:layout_constraintBottom_toBottomOf="@id/iv_recipe_image"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/iv_recipe_image" />
+                <ImageButton
+                    android:id="@+id/btn_back"
+                    android:layout_width="40dp"
+                    android:layout_height="40dp"
+                    android:layout_marginStart="16dp"
+                    android:layout_marginTop="16dp"
+                    android:background="@drawable/ic_launcher_background"
+                    android:backgroundTint="@color/white"
+                    android:contentDescription="@string/volver"
+                    android:padding="8dp"
+                    android:src="@drawable/ic_arrow_back"
+                    android:elevation="4dp"
+                    app:layout_constraintStart_toStartOf="parent"
+                    app:layout_constraintTop_toTopOf="parent"
+                    app:tint="@color/text_primary" />
+
+                <com.google.android.material.floatingactionbutton.FloatingActionButton
+                    android:id="@+id/iv_favorito"
+                    android:layout_width="wrap_content"
+                    android:layout_height="wrap_content"
+                    android:layout_marginEnd="24dp"
+                    android:contentDescription="@string/agregar_favorito"
+                    android:src="@drawable/ic_favorite"
+                    app:backgroundTint="@color/white"
+                    app:tint="@color/text_secondary"
+                    app:elevation="6dp"
+                    app:fabSize="normal"
+                    app:layout_constraintBottom_toBottomOf="@id/iv_recipe_image"
+                    app:layout_constraintEnd_toEndOf="parent"
+                    app:layout_constraintTop_toBottomOf="@id/iv_recipe_image" />
+            </androidx.constraintlayout.widget.ConstraintLayout>
 
             <LinearLayout
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="vertical"
                 android:paddingHorizontal="24dp"
-                android:paddingTop="12dp"
-                app:layout_constraintEnd_toEndOf="parent"
-                app:layout_constraintStart_toStartOf="parent"
-                app:layout_constraintTop_toBottomOf="@id/iv_recipe_image">
+                android:paddingTop="12dp">
 
                 <TextView
                     android:id="@+id/tv_recipe_name"
@@ -96,7 +99,6 @@
                     android:layout_height="wrap_content"
                     android:layout_marginTop="8dp"
                     android:orientation="horizontal">
-
                     <TextView
                         android:id="@+id/tv_category"
                         android:layout_width="wrap_content"
@@ -108,7 +110,6 @@
                         android:textSize="12sp"
                         android:textStyle="bold"
                         tools:text="Desayuno" />
-
                     <TextView
                         android:id="@+id/tv_area"
                         android:layout_width="wrap_content"
@@ -129,7 +130,6 @@
                     android:orientation="horizontal"
                     android:gravity="center_vertical"
                     android:layout_marginTop="12dp">
-
                     <TextView
                         android:id="@+id/tv_basic_info"
                         android:layout_width="0dp"
@@ -138,7 +138,6 @@
                         android:textColor="@color/text_secondary"
                         android:textSize="14sp"
                         tools:text="⏱ 30 min" />
-
                     <com.google.android.material.button.MaterialButton
                         android:id="@+id/btn_translate"
                         style="@style/Widget.Material3.Button.TextButton"
@@ -186,7 +185,6 @@
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
-
                 <TextView
                     android:id="@+id/tv_ingredientes"
                     android:layout_width="match_parent"
@@ -205,7 +203,6 @@
                     android:textColor="@color/text_primary"
                     android:textSize="20sp"
                     android:textStyle="bold" />
-
                 <TextView
                     android:id="@+id/tv_preparacion"
                     android:layout_width="match_parent"
@@ -257,7 +254,58 @@
                     android:textSize="16sp"
                     app:cornerRadius="12dp" />
 
+                <View
+                    android:layout_width="match_parent"
+                    android:layout_height="1dp"
+                    android:background="@color/divider"
+                    android:layout_marginTop="32dp"
+                    android:layout_marginBottom="16dp" />
+
+                <LinearLayout
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginBottom="12dp">
+
+                    <TextView
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Reseñas"
+                        android:textColor="@color/text_primary"
+                        android:textSize="20sp"
+                        android:textStyle="bold" />
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_add_review"
+                        style="@style/Widget.Material3.Button.TextButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Escribir reseña"
+                        android:textColor="@color/orange_primary" />
+                </LinearLayout>
+
+                <TextView
+                    android:id="@+id/tv_no_reviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:text="Sé el primero en opinar sobre esta receta"
+                    android:textColor="@color/text_hint"
+                    android:textAlignment="center"
+                    android:padding="16dp"
+                    android:visibility="gone" />
+
+                <androidx.recyclerview.widget.RecyclerView
+                    android:id="@+id/rv_reviews"
+                    android:layout_width="match_parent"
+                    android:layout_height="wrap_content"
+                    android:nestedScrollingEnabled="false"
+                    android:clipToPadding="false"
+                    tools:itemCount="2"
+                    tools:listitem="@layout/item_review" />
+
             </LinearLayout>
-        </androidx.constraintlayout.widget.ConstraintLayout>
+        </LinearLayout>
     </ScrollView>
 </androidx.constraintlayout.widget.ConstraintLayout>
