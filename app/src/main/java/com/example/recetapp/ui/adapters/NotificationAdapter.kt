@@ -1,5 +1,6 @@
 package com.example.recetapp.ui.adapters
 
+import android.graphics.Color
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
@@ -12,7 +13,9 @@ import com.example.recetapp.data.model.Notification
 import com.example.recetapp.data.model.NotificationType
 import com.example.recetapp.databinding.ItemNotificationBinding
 
-class NotificationAdapter : ListAdapter<Notification, NotificationAdapter.NotificationViewHolder>(NotificationDiffCallback()) {
+class NotificationAdapter(
+    private val onNotificationClick: (Notification) -> Unit
+) : ListAdapter<Notification, NotificationAdapter.NotificationViewHolder>(NotificationDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): NotificationViewHolder {
         val binding = ItemNotificationBinding.inflate(LayoutInflater.from(parent.context), parent, false)
@@ -23,10 +26,19 @@ class NotificationAdapter : ListAdapter<Notification, NotificationAdapter.Notifi
         holder.bind(getItem(position))
     }
 
-    class NotificationViewHolder(private val binding: ItemNotificationBinding) : RecyclerView.ViewHolder(binding.root) {
+    inner class NotificationViewHolder(private val binding: ItemNotificationBinding) : RecyclerView.ViewHolder(binding.root) {
         fun bind(notification: Notification) {
             binding.tvTitle.text = notification.title
             binding.tvMessage.text = notification.message
+
+            // Estilo según estado Leído/No leído
+            if (!notification.read) {
+                binding.root.setCardBackgroundColor(Color.parseColor("#E3F2FD")) // Azul muy claro
+                binding.tvTitle.setTypeface(null, android.graphics.Typeface.BOLD)
+            } else {
+                binding.root.setCardBackgroundColor(Color.WHITE)
+                binding.tvTitle.setTypeface(null, android.graphics.Typeface.NORMAL)
+            }
 
             try {
                 val date = DateUtils.getRelativeTimeSpanString(
@@ -39,7 +51,7 @@ class NotificationAdapter : ListAdapter<Notification, NotificationAdapter.Notifi
 
             val iconRes = when(notification.type) {
                 NotificationType.FOLLOW -> R.drawable.ic_person
-                NotificationType.REVIEW -> R.drawable.ic_search
+                NotificationType.REVIEW -> R.drawable.ic_search // Usa icono adecuado
                 NotificationType.LIKE -> R.drawable.ic_favorite
                 else -> R.drawable.ic_search
             }
@@ -49,6 +61,10 @@ class NotificationAdapter : ListAdapter<Notification, NotificationAdapter.Notifi
                 Glide.with(binding.root).load(notification.fromUserPhotoUrl).circleCrop().into(binding.ivUserPhoto)
             } else {
                 binding.ivUserPhoto.setImageResource(R.drawable.ic_person)
+            }
+
+            binding.root.setOnClickListener {
+                onNotificationClick(notification)
             }
         }
     }

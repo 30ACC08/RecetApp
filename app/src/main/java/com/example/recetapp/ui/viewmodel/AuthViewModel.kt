@@ -235,4 +235,23 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _isLoading.value = false
         }
     }
+
+    // NUEVO: Marcar notificación como leída
+    fun markNotificationAsRead(notification: Notification) {
+        if (notification.read) return // Si ya está leída, no hacemos nada
+
+        viewModelScope.launch {
+            val userId = authRepository.getCurrentUser()?.id ?: return@launch
+            // Actualizar en Firebase
+            authRepository.markNotificationAsRead(userId, notification.id)
+
+            // Actualizar lista local para feedback inmediato en UI
+            val currentList = _notifications.value?.toMutableList() ?: return@launch
+            val index = currentList.indexOfFirst { it.id == notification.id }
+            if (index != -1) {
+                currentList[index] = currentList[index].copy(read = true)
+                _notifications.value = currentList
+            }
+        }
+    }
 }

@@ -45,7 +45,8 @@ class UserReviewsFragment : Fragment() {
         adapter = UserReviewsAdapter(
             onRecipeClick = { review -> navigateToRecipeDetail(review) },
             onEditClick = { review -> showEditDialog(review) },
-            onDeleteClick = { review -> showDeleteDialog(review) }
+            onDeleteClick = { review -> showDeleteDialog(review) },
+            isEditable = true
         )
 
         binding.rvUserReviews.layoutManager = LinearLayoutManager(context)
@@ -60,8 +61,6 @@ class UserReviewsFragment : Fragment() {
             thumbnailUrl = review.recipeImageUrl
         )
         viewModel.setSelectedRecipe(tempRecipe)
-
-        // CORRECCIÓN: Asegurar descarga completa antes de ir al detalle
         viewModel.loadFullRecipeDetails(review.recipeId)
 
         try {
@@ -86,7 +85,9 @@ class UserReviewsFragment : Fragment() {
             }
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+        // CORRECCIÓN: Usamos isLoadingAction (la barra de carga general para acciones)
+        // Nota: Si este ViewModel no expone isLoadingAction, asegúrate de haber actualizado RecipeViewModel.kt
+        viewModel.isLoadingAction.observe(viewLifecycleOwner) { loading ->
             binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         }
     }

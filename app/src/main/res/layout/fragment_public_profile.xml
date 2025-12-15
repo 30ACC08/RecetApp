@@ -44,14 +44,16 @@
 
     <TextView
         android:id="@+id/tv_user_name"
-        android:layout_width="wrap_content"
+        android:layout_width="0dp"
         android:layout_height="wrap_content"
         android:layout_marginStart="16dp"
+        android:layout_marginEnd="16dp"
         android:layout_marginTop="8dp"
         android:text="Nombre de Usuario"
         android:textColor="@color/text_primary"
         android:textSize="22sp"
         android:textStyle="bold"
+        app:layout_constraintEnd_toStartOf="@id/btn_follow"
         app:layout_constraintStart_toEndOf="@id/iv_profile"
         app:layout_constraintTop_toTopOf="@id/iv_profile" />
 
@@ -64,6 +66,17 @@
         android:textColor="@color/text_secondary"
         app:layout_constraintStart_toEndOf="@id/iv_profile"
         app:layout_constraintTop_toBottomOf="@id/tv_user_name" />
+
+    <Button
+        android:id="@+id/btn_follow"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:layout_marginEnd="16dp"
+        android:text="Seguir"
+        android:visibility="gone"
+        app:layout_constraintBottom_toBottomOf="@id/iv_profile"
+        app:layout_constraintEnd_toEndOf="parent"
+        app:layout_constraintTop_toTopOf="@id/iv_profile" />
 
     <ScrollView
         android:layout_width="match_parent"

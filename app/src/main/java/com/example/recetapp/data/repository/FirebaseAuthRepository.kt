@@ -204,12 +204,22 @@ class FirebaseAuthRepository {
             val batch = firestore.batch()
             val myFollowingRef = firestore.collection("usuarios").document(currentUserId)
                 .collection("siguiendo").document(targetUserId)
-            batch.set(myFollowingRef, mapOf("timestamp" to System.currentTimeMillis()))
+            val targetUserDoc = firestore.collection("usuarios").document(targetUserId).get().await()
+            val targetName = targetUserDoc.getString("nombre") ?: "Usuario"
+            val targetPhoto = targetUserDoc.getString("photoUrl") ?: ""
+
+            // Guardamos nombre y foto para optimizar la lista de "Siguiendo"
+            batch.set(myFollowingRef, mapOf(
+                "timestamp" to System.currentTimeMillis(),
+                "nombre" to targetName,
+                "photoUrl" to targetPhoto
+            ))
+
             val theirFollowersRef = firestore.collection("usuarios").document(targetUserId)
                 .collection("seguidores").document(currentUserId)
             batch.set(theirFollowersRef, mapOf("timestamp" to System.currentTimeMillis()))
 
-            // NUEVO: Crear Notificación
+            // Notificación
             val currentUser = getCurrentUser()
             if (currentUser != null) {
                 val notifId = UUID.randomUUID().toString()
@@ -270,20 +280,14 @@ class FirebaseAuthRepository {
             val snapshot = firestore.collection("usuarios").document(currentUserId)
                 .collection("siguiendo").get().await()
 
-            val followingIds = snapshot.documents.map { it.id }
-            if (followingIds.isEmpty()) return Result.success(emptyList())
-
-            val users = mutableListOf<User>()
-            for (id in followingIds) {
-                try {
-                    val doc = firestore.collection("usuarios").document(id).get().await()
-                    if (doc.exists()) {
-                        val nombre = doc.getString("nombre") ?: "Usuario"
-                        val email = doc.getString("email") ?: ""
-                        val photo = doc.getString("photoUrl") ?: ""
-                        users.add(User(id, nombre, email, photo, UserRole.USER))
-                    }
-                } catch (e: Exception) { continue }
+            val users = snapshot.documents.map { doc ->
+                User(
+                    id = doc.id,
+                    nombre = doc.getString("nombre") ?: "Usuario",
+                    email = "",
+                    photoUrl = doc.getString("photoUrl") ?: "",
+                    rol = UserRole.USER
+                )
             }
             Result.success(users)
         } catch (e: Exception) { Result.failure(e) }
@@ -296,6 +300,16 @@ class FirebaseAuthRepository {
                 .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
                 .get().await()
             Result.success(snapshot.toObjects(Notification::class.java))
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    // NUEVO: Marcar notificación como leída
+    suspend fun markNotificationAsRead(userId: String, notificationId: String): Result<Boolean> {
+        return try {
+            firestore.collection("usuarios").document(userId)
+                .collection("notificaciones").document(notificationId)
+                .update("read", true).await()
+            Result.success(true)
         } catch (e: Exception) { Result.failure(e) }
     }
 }

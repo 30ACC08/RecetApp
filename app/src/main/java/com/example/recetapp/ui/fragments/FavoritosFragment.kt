@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
@@ -12,6 +13,7 @@ import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentFavoritosBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.example.recetapp.ui.viewmodel.UiState
 
 class FavoritosFragment : Fragment() {
 
@@ -28,8 +30,8 @@ class FavoritosFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupRecyclerView()
-        viewModel.loadFavorites() // Cargar al entrar
         setupObservers()
+        viewModel.loadFavorites()
     }
 
     private fun setupRecyclerView() {
@@ -39,7 +41,7 @@ class FavoritosFragment : Fragment() {
                 findNavController().navigate(R.id.action_favoritosFragment_to_detalleFragment)
             },
             onFavoriteClick = { recipe ->
-                viewModel.toggleFavorite(recipe) // Permitir quitar desde aquí
+                viewModel.toggleFavorite(recipe)
             }
         )
         binding.rvFavoritos.layoutManager = LinearLayoutManager(context)
@@ -47,21 +49,27 @@ class FavoritosFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.favorites.observe(viewLifecycleOwner) { recipes ->
-            adapter.submitList(recipes)
-            binding.tvCantidad.text = "${recipes.size} recetas guardadas"
-
-            if (recipes.isEmpty()) {
-                binding.tvEmpty.visibility = View.VISIBLE
-                binding.rvFavoritos.visibility = View.GONE
-            } else {
-                binding.tvEmpty.visibility = View.GONE
-                binding.rvFavoritos.visibility = View.VISIBLE
+        viewModel.favoritesState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is UiState.Loading -> binding.progressBar.visibility = View.VISIBLE
+                is UiState.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvFavoritos.visibility = View.VISIBLE
+                    binding.tvEmpty.visibility = View.GONE
+                    adapter.submitList(state.data)
+                    binding.tvCantidad.text = "${state.data.size} recetas guardadas"
+                }
+                is UiState.Empty -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvFavoritos.visibility = View.GONE
+                    binding.tvEmpty.visibility = View.VISIBLE
+                    binding.tvCantidad.text = "0 recetas guardadas"
+                }
+                is UiState.Error -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                }
             }
-        }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
     }
 

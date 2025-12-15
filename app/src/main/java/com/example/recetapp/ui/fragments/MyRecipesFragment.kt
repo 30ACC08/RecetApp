@@ -6,22 +6,23 @@ import android.view.View
 import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
-import androidx.lifecycle.lifecycleScope
+import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
 import com.example.recetapp.data.model.Recipe
-import com.example.recetapp.data.repository.RecipeRepository
 import com.example.recetapp.databinding.FragmentMyRecipesBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
+import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.example.recetapp.ui.viewmodel.UiState
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
-import kotlinx.coroutines.launch
 
 class MyRecipesFragment : Fragment() {
 
     private var _binding: FragmentMyRecipesBinding? = null
     private val binding get() = _binding!!
-    private val repository = RecipeRepository()
+    // Ahora usamos el ViewModel compartido
+    private val viewModel: RecipeViewModel by activityViewModels()
     private lateinit var adapter: RecipeAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -32,18 +33,17 @@ class MyRecipesFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
         setupUI()
-        loadMyRecipes()
+        setupObservers()
+        viewModel.loadMyRecipes()
     }
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        // Botón Flotante para crear
         binding.btnAddRecipe.setOnClickListener {
             findNavController().navigate(R.id.action_myRecipesFragment_to_createRecipeFragment)
         }
 
-        // Adapter con flag TRUE para mostrar botón de borrar
         adapter = RecipeAdapter(
             onRecipeClick = { recipe ->
                 val bundle = Bundle().apply { putParcelable("recipe", recipe) }
@@ -52,25 +52,35 @@ class MyRecipesFragment : Fragment() {
             onFavoriteClick = { recipe ->
                 showDeleteDialog(recipe)
             },
-            isMyRecipesMode = true // <--- IMPORTANTE: Activa modo "Mis Recetas"
+            isMyRecipesMode = true
         )
 
         binding.rvMyRecipes.layoutManager = LinearLayoutManager(context)
         binding.rvMyRecipes.adapter = adapter
     }
 
-    private fun loadMyRecipes() {
-        binding.progressBar.visibility = View.VISIBLE
-        lifecycleScope.launch {
-            repository.getUserRecipes().onSuccess { recipes ->
-                adapter.submitList(recipes)
-                binding.tvCantidad.text = "${recipes.size} recetas publicadas"
-                binding.llEmpty.visibility = if (recipes.isEmpty()) View.VISIBLE else View.GONE
-                binding.rvMyRecipes.visibility = if (recipes.isEmpty()) View.GONE else View.VISIBLE
-            }.onFailure {
-                Toast.makeText(context, "Error cargando recetas", Toast.LENGTH_SHORT).show()
+    private fun setupObservers() {
+        viewModel.myRecipesState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is UiState.Loading -> binding.progressBar.visibility = View.VISIBLE
+                is UiState.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvMyRecipes.visibility = View.VISIBLE
+                    binding.llEmpty.visibility = View.GONE
+                    adapter.submitList(state.data)
+                    binding.tvCantidad.text = "${state.data.size} recetas publicadas"
+                }
+                is UiState.Empty -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvMyRecipes.visibility = View.GONE
+                    binding.llEmpty.visibility = View.VISIBLE
+                    binding.tvCantidad.text = "0 recetas publicadas"
+                }
+                is UiState.Error -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                }
             }
-            binding.progressBar.visibility = View.GONE
         }
     }
 
@@ -79,11 +89,8 @@ class MyRecipesFragment : Fragment() {
             .setTitle("Eliminar Receta")
             .setMessage("¿Estás seguro de borrar '${recipe.name}'?")
             .setPositiveButton("Eliminar") { _, _ ->
-                lifecycleScope.launch {
-                    repository.deleteRecipe(recipe.id)
-                    loadMyRecipes()
-                    Toast.makeText(context, "Eliminada", Toast.LENGTH_SHORT).show()
-                }
+                viewModel.deleteRecipe(recipe.id)
+                Toast.makeText(context, "Eliminando...", Toast.LENGTH_SHORT).show()
             }
             .setNegativeButton("Cancelar", null)
             .show()

@@ -97,6 +97,7 @@ interface SpoonacularApi {
     companion object {
         private const val BASE_URL = "https://api.spoonacular.com/"
 
+        // CLAVE ESCRITA DIRECTAMENTE (SOLUCIÓN RÁPIDA)
         const val API_KEY = "ef363f431c6448f3b0504358c815ecfb"
 
         fun create(): SpoonacularApi {

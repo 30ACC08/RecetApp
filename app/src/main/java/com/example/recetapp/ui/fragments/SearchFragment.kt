@@ -18,6 +18,7 @@ import com.example.recetapp.data.model.RecipeFilter
 import com.example.recetapp.databinding.FragmentSearchBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.example.recetapp.ui.viewmodel.UiState
 import com.google.android.material.chip.Chip
 
 class SearchFragment : Fragment() {
@@ -74,14 +75,10 @@ class SearchFragment : Fragment() {
 
     private fun setupClickListeners() {
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
-
-        // FILTROS AVANZADOS (Botón)
         binding.btnFilters.setOnClickListener { showFilterDialog() }
-
         binding.btnSearch.setOnClickListener { viewModel.searchRecipes(binding.etSearch.text.toString()) }
         binding.tvClearFilters.setOnClickListener { viewModel.clearFilters(); binding.etSearch.setText("") }
 
-        // FILTROS BÁSICOS (Chips)
         binding.chipDesayuno.setOnClickListener { viewModel.toggleCategory("Breakfast") }
         binding.chipComida.setOnClickListener { viewModel.toggleCategory("Beef") }
         binding.chipCena.setOnClickListener { viewModel.toggleCategory("Seafood") }
@@ -91,17 +88,32 @@ class SearchFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.recipes.observe(viewLifecycleOwner) { recipes ->
-            recipeAdapter.submitList(recipes)
-            val count = recipes.size
-            binding.tvResultsCount.text = if (count == 0) "Sin resultados" else "$count recetas"
-            binding.tvEmptyState.visibility = if (count == 0 && !binding.progressBar.isShown) View.VISIBLE else View.GONE
-            binding.rvSearchResults.visibility = if (count > 0) View.VISIBLE else View.GONE
-        }
-
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-            if (isLoading) binding.tvEmptyState.visibility = View.GONE
+        // Observamos searchState (UiState)
+        viewModel.searchState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is UiState.Loading -> {
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.tvEmptyState.visibility = View.GONE
+                    binding.rvSearchResults.visibility = View.GONE
+                }
+                is UiState.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvSearchResults.visibility = View.VISIBLE
+                    binding.tvEmptyState.visibility = View.GONE
+                    recipeAdapter.submitList(state.data)
+                    binding.tvResultsCount.text = "${state.data.size} recetas"
+                }
+                is UiState.Empty -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.rvSearchResults.visibility = View.GONE
+                    binding.tvEmptyState.visibility = View.VISIBLE
+                    binding.tvResultsCount.text = "Sin resultados"
+                }
+                is UiState.Error -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(context, state.message, Toast.LENGTH_SHORT).show()
+                }
+            }
         }
 
         viewModel.currentFilter.observe(viewLifecycleOwner) { filter ->

@@ -1,5 +1,6 @@
 package com.example.recetapp.ui.fragments
 
+import android.graphics.Color
 import android.os.Build
 import android.os.Bundle
 import android.view.LayoutInflater
@@ -8,6 +9,8 @@ import android.view.ViewGroup
 import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
+import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -17,13 +20,19 @@ import com.example.recetapp.data.model.User
 import com.example.recetapp.databinding.FragmentPublicProfileBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.adapters.UserReviewsAdapter
+import com.example.recetapp.ui.viewmodel.AuthViewModel
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import kotlinx.coroutines.launch
 
 class PublicProfileFragment : Fragment() {
 
     private var _binding: FragmentPublicProfileBinding? = null
     private val binding get() = _binding!!
-    private val viewModel: RecipeViewModel by activityViewModels()
+
+    // ViewModels
+    private val recipeViewModel: RecipeViewModel by activityViewModels()
+    private val authViewModel: AuthViewModel by viewModels()
+
     private var user: User? = null
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -47,6 +56,7 @@ class PublicProfileFragment : Fragment() {
         }
 
         setupUI()
+        checkFollowStatus()
         loadContent()
         setupObservers()
     }
@@ -61,13 +71,19 @@ class PublicProfileFragment : Fragment() {
             binding.ivProfile.setImageResource(R.drawable.ic_person)
         }
 
+        binding.btnFollow.setOnClickListener {
+            user?.id?.let { targetId ->
+                authViewModel.toggleFollow(targetId)
+            }
+        }
+
         val recipeAdapter = RecipeAdapter(
             onRecipeClick = { recipe ->
-                viewModel.setSelectedRecipe(recipe)
+                recipeViewModel.setSelectedRecipe(recipe)
                 findNavController().navigate(R.id.action_publicProfileFragment_to_detalleFragment)
             },
             onFavoriteClick = { recipe ->
-                viewModel.toggleFavorite(recipe)
+                recipeViewModel.toggleFavorite(recipe)
                 Toast.makeText(context, "Actualizando favoritos", Toast.LENGTH_SHORT).show()
             },
             isMyRecipesMode = false
@@ -83,11 +99,8 @@ class PublicProfileFragment : Fragment() {
                     imageUrl = review.recipeImageUrl,
                     thumbnailUrl = review.recipeImageUrl
                 )
-                viewModel.setSelectedRecipe(tempRecipe)
-
-                // CORRECCIÓN: Descargar receta completa
-                viewModel.loadFullRecipeDetails(review.recipeId)
-
+                recipeViewModel.setSelectedRecipe(tempRecipe)
+                recipeViewModel.loadFullRecipeDetails(review.recipeId)
                 findNavController().navigate(R.id.action_publicProfileFragment_to_detalleFragment)
             },
             isEditable = false
@@ -96,24 +109,52 @@ class PublicProfileFragment : Fragment() {
         binding.rvReviews.adapter = reviewsAdapter
     }
 
+    private fun checkFollowStatus() {
+        lifecycleScope.launch {
+            authViewModel.loadCurrentUser()
+        }
+        user?.id?.let { authViewModel.checkIfFollowing(it) }
+    }
+
     private fun loadContent() {
         user?.id?.let { userId ->
-            viewModel.loadPublicUserContent(userId)
+            recipeViewModel.loadPublicUserContent(userId)
         }
     }
 
     private fun setupObservers() {
-        viewModel.publicUserRecipes.observe(viewLifecycleOwner) { recipes ->
+        authViewModel.currentUser.observe(viewLifecycleOwner) { currentUser ->
+            if (currentUser != null && user != null) {
+                if (currentUser.id == user!!.id) {
+                    binding.btnFollow.visibility = View.GONE
+                } else {
+                    binding.btnFollow.visibility = View.VISIBLE
+                }
+            }
+        }
+
+        authViewModel.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
+            if (isFollowing) {
+                binding.btnFollow.text = "Siguiendo"
+                binding.btnFollow.setBackgroundColor(Color.GRAY)
+            } else {
+                binding.btnFollow.text = "Seguir"
+                binding.btnFollow.setBackgroundColor(requireContext().getColor(R.color.orange_primary))
+            }
+        }
+
+        recipeViewModel.publicUserRecipes.observe(viewLifecycleOwner) { recipes ->
             (binding.rvRecipes.adapter as RecipeAdapter).submitList(recipes)
             binding.tvNoRecipes.visibility = if (recipes.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        viewModel.publicUserReviews.observe(viewLifecycleOwner) { reviews ->
+        recipeViewModel.publicUserReviews.observe(viewLifecycleOwner) { reviews ->
             (binding.rvReviews.adapter as UserReviewsAdapter).submitList(reviews)
             binding.tvNoReviews.visibility = if (reviews.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+        // CORRECCIÓN: Usamos isLoadingAction en lugar de isLoading
+        recipeViewModel.isLoadingAction.observe(viewLifecycleOwner) { loading ->
             binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         }
     }

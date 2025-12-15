@@ -1,4 +1,3 @@
-// Ruta: app/build.gradle.kts
 plugins {
     id("com.android.application")
     id("org.jetbrains.kotlin.android")
@@ -30,6 +29,7 @@ android {
 
     buildFeatures {
         viewBinding = true
+        buildConfig = true // <--- ACTIVAMOS ESTO
     }
 
     compileOptions {
@@ -60,28 +60,27 @@ dependencies {
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-android:1.7.3")
     implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 
-    // Firebase BoM (Bill of Materials)
+    // Firebase BoM
     implementation(platform("com.google.firebase:firebase-bom:32.7.0"))
     implementation("com.google.firebase:firebase-auth")
     implementation("com.google.firebase:firebase-firestore")
     implementation("com.google.firebase:firebase-storage")
 
-    // Retrofit - Para consumir APIs REST
+    // Retrofit
     implementation("com.squareup.retrofit2:retrofit:2.9.0")
     implementation("com.squareup.retrofit2:converter-gson:2.9.0")
     implementation("com.squareup.okhttp3:logging-interceptor:4.12.0")
 
-    // Glide - Para cargar imágenes
+    // Glide
     implementation("com.github.bumptech.glide:glide:4.16.0")
     annotationProcessor("com.github.bumptech.glide:compiler:4.16.0")
 
     // Gson
     implementation("com.google.code.gson:gson:2.10.1")
 
-    // Parcelize para Parcelable automático
+    // Parcelize
     implementation("org.jetbrains.kotlin:kotlin-stdlib:1.9.0")
-    // TRADUCTOR GOOGLE ML KIT
+
+    // ML Kit Traductor
     implementation("com.google.mlkit:translate:17.0.2")
-    // Para usar await() con tareas de Google
-    implementation("org.jetbrains.kotlinx:kotlinx-coroutines-play-services:1.7.3")
 }

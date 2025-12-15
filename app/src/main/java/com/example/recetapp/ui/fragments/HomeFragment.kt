@@ -15,6 +15,7 @@ import com.example.recetapp.databinding.FragmentHomeBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.adapters.RecipeCompactAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.example.recetapp.ui.viewmodel.UiState
 
 class HomeFragment : Fragment() {
 
@@ -38,28 +39,25 @@ class HomeFragment : Fragment() {
         setupClickListeners()
         setupObservers()
 
-        // Carga inicial completa
-        if (viewModel.featuredRecipes.value.isNullOrEmpty()) {
+        // Carga inicial solo si no hay datos
+        if (viewModel.homeState.value !is UiState.Success) {
             viewModel.loadHomeContent()
         }
     }
 
     private fun setupRecyclerViews() {
-        // 1. Tendencias (Horizontal)
         featuredAdapter = RecipeCompactAdapter { navigateToDetail(it) }
         binding.rvFeaturedRecipes.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = featuredAdapter
         }
 
-        // 2. Desayunos (Horizontal)
         breakfastAdapter = RecipeCompactAdapter { navigateToDetail(it) }
         binding.rvBreakfastRecipes.apply {
             layoutManager = LinearLayoutManager(context, LinearLayoutManager.HORIZONTAL, false)
             adapter = breakfastAdapter
         }
 
-        // 3. Saludables (Vertical)
         healthyAdapter = RecipeAdapter(
             onRecipeClick = { navigateToDetail(it) },
             onFavoriteClick = {
@@ -81,16 +79,27 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        viewModel.featuredRecipes.observe(viewLifecycleOwner) { featuredAdapter.submitList(it) }
-        viewModel.breakfastRecipes.observe(viewLifecycleOwner) { breakfastAdapter.submitList(it) }
-        viewModel.healthyRecipes.observe(viewLifecycleOwner) { healthyAdapter.submitList(it) }
+        // Observamos UN SOLO estado que controla toda la pantalla
+        viewModel.homeState.observe(viewLifecycleOwner) { state ->
+            when (state) {
+                is UiState.Loading -> {
+                    binding.progressBar.visibility = View.VISIBLE
+                    binding.scrollView.visibility = View.GONE
+                }
+                is UiState.Success -> {
+                    binding.progressBar.visibility = View.GONE
+                    binding.scrollView.visibility = View.VISIBLE
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
-            binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
-        }
-
-        viewModel.error.observe(viewLifecycleOwner) {
-            if (!it.isNullOrBlank()) Toast.makeText(context, it, Toast.LENGTH_SHORT).show()
+                    featuredAdapter.submitList(state.data.featured)
+                    breakfastAdapter.submitList(state.data.breakfast)
+                    healthyAdapter.submitList(state.data.healthy)
+                }
+                is UiState.Error -> {
+                    binding.progressBar.visibility = View.GONE
+                    Toast.makeText(context, state.message, Toast.LENGTH_LONG).show()
+                }
+                else -> {}
+            }
         }
     }
 

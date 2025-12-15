@@ -17,7 +17,12 @@ class NotificationsFragment : Fragment() {
     private var _binding: FragmentNotificationsBinding? = null
     private val binding get() = _binding!!
     private val viewModel: AuthViewModel by viewModels()
-    private val adapter = NotificationAdapter()
+
+    // Ahora pasamos la lambda del click
+    private val adapter = NotificationAdapter { notification ->
+        viewModel.markNotificationAsRead(notification)
+        // Aquí podrías navegar a la receta o perfil relacionado si quisieras
+    }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentNotificationsBinding.inflate(inflater, container, false)
