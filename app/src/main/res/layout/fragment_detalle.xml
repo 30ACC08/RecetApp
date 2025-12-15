@@ -149,11 +149,33 @@
                         android:padding="0dp" />
                 </LinearLayout>
 
-                <TextView
-                    android:id="@+id/tv_source"
-                    android:layout_width="wrap_content"
+                <LinearLayout
+                    android:layout_width="match_parent"
                     android:layout_height="wrap_content"
-                    android:visibility="gone" />
+                    android:orientation="horizontal"
+                    android:gravity="center_vertical"
+                    android:layout_marginTop="8dp">
+
+                    <TextView
+                        android:id="@+id/tv_source"
+                        android:layout_width="0dp"
+                        android:layout_height="wrap_content"
+                        android:layout_weight="1"
+                        android:text="Por: Nombre Chef"
+                        android:textColor="@color/text_secondary"
+                        android:textStyle="italic"
+                        android:textSize="14sp"/>
+
+                    <com.google.android.material.button.MaterialButton
+                        android:id="@+id/btn_follow"
+                        style="@style/Widget.Material3.Button.TonalButton"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Seguir"
+                        android:visibility="gone"
+                        app:icon="@drawable/ic_person"
+                        app:iconSize="18dp" />
+                </LinearLayout>
 
                 <LinearLayout
                     android:id="@+id/ll_diet_tags"

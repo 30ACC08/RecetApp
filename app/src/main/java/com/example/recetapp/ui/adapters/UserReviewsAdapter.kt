@@ -1,91 +1,128 @@
-package com.example.recetapp.ui.adapters
+package com.example.recetapp.ui.fragments
 
-import android.text.format.DateUtils
+import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
-import android.widget.PopupMenu
-import androidx.recyclerview.widget.DiffUtil
-import androidx.recyclerview.widget.ListAdapter
-import androidx.recyclerview.widget.RecyclerView
-import com.bumptech.glide.Glide
+import android.widget.EditText
+import android.widget.RatingBar
+import android.widget.Toast
+import androidx.fragment.app.Fragment
+import androidx.fragment.app.activityViewModels
+import androidx.navigation.fragment.findNavController
+import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
+import com.example.recetapp.data.model.Recipe
 import com.example.recetapp.data.model.Review
-import com.example.recetapp.databinding.ItemUserReviewBinding
+import com.example.recetapp.databinding.FragmentUserReviewsBinding
+import com.example.recetapp.ui.adapters.UserReviewsAdapter
+import com.example.recetapp.ui.viewmodel.RecipeViewModel
+import com.google.android.material.dialog.MaterialAlertDialogBuilder
 
-class UserReviewsAdapter(
-    private val onRecipeClick: (Review) -> Unit,
-    private val onEditClick: (Review) -> Unit,
-    private val onDeleteClick: (Review) -> Unit
-) : ListAdapter<Review, UserReviewsAdapter.UserReviewViewHolder>(UserReviewDiffCallback()) {
+class UserReviewsFragment : Fragment() {
 
-    override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): UserReviewViewHolder {
-        val binding = ItemUserReviewBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return UserReviewViewHolder(binding, onRecipeClick, onEditClick, onDeleteClick)
+    private var _binding: FragmentUserReviewsBinding? = null
+    private val binding get() = _binding!!
+    private val viewModel: RecipeViewModel by activityViewModels()
+    private lateinit var adapter: UserReviewsAdapter
+
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
+        _binding = FragmentUserReviewsBinding.inflate(inflater, container, false)
+        return binding.root
     }
 
-    override fun onBindViewHolder(holder: UserReviewViewHolder, position: Int) {
-        holder.bind(getItem(position))
+    override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
+        super.onViewCreated(view, savedInstanceState)
+
+        setupUI()
+        setupObservers()
+        viewModel.loadUserReviews()
     }
 
-    class UserReviewViewHolder(
-        private val binding: ItemUserReviewBinding,
-        private val onRecipeClick: (Review) -> Unit,
-        private val onEdit: (Review) -> Unit,
-        private val onDelete: (Review) -> Unit
-    ) : RecyclerView.ViewHolder(binding.root) {
+    private fun setupUI() {
+        binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        fun bind(review: Review) {
-            // Asegúrate de que tu modelo Review.kt tenga recipeName y recipeImageUrl
-            binding.tvRecipeTitle.text = review.recipeName
-            binding.tvUserComment.text = review.comment
-            binding.rbUserRating.rating = review.rating
+        adapter = UserReviewsAdapter(
+            onRecipeClick = { review -> navigateToRecipeDetail(review) },
+            onEditClick = { review -> showEditDialog(review) },
+            onDeleteClick = { review -> showDeleteDialog(review) }
+        )
 
-            try {
-                val date = DateUtils.getRelativeTimeSpanString(
-                    review.timestamp.time, System.currentTimeMillis(), DateUtils.DAY_IN_MILLIS
-                )
-                binding.tvReviewDate.text = date
-            } catch (e: Exception) {
-                binding.tvReviewDate.text = "Reciente"
+        binding.rvUserReviews.layoutManager = LinearLayoutManager(context)
+        binding.rvUserReviews.adapter = adapter
+    }
+
+    private fun navigateToRecipeDetail(review: Review) {
+        val tempRecipe = Recipe(
+            id = review.recipeId,
+            name = review.recipeName,
+            imageUrl = review.recipeImageUrl,
+            thumbnailUrl = review.recipeImageUrl
+        )
+        viewModel.setSelectedRecipe(tempRecipe)
+
+        // CORRECCIÓN: Asegurar descarga completa antes de ir al detalle
+        viewModel.loadFullRecipeDetails(review.recipeId)
+
+        try {
+            findNavController().navigate(R.id.action_userReviewsFragment_to_detalleFragment)
+        } catch (e: Exception) {
+            Toast.makeText(requireContext(), "Error de navegación", Toast.LENGTH_SHORT).show()
+        }
+    }
+
+    private fun setupObservers() {
+        viewModel.userReviews.observe(viewLifecycleOwner) { reviews ->
+            adapter.submitList(reviews)
+            binding.tvEmpty.visibility = if (reviews.isEmpty()) View.VISIBLE else View.GONE
+        }
+
+        viewModel.reviewActionState.observe(viewLifecycleOwner) { result ->
+            result.onSuccess { msg ->
+                Toast.makeText(requireContext(), msg, Toast.LENGTH_SHORT).show()
             }
-
-            Glide.with(binding.root)
-                .load(review.recipeImageUrl)
-                .centerCrop()
-                .placeholder(android.R.drawable.ic_menu_gallery)
-                .into(binding.ivRecipeThumb)
-
-            // Clic en la tarjeta -> Ir a receta
-            binding.root.setOnClickListener {
-                onRecipeClick(review)
-            }
-
-            // Menú opciones
-            binding.btnMenu.setOnClickListener { view ->
-                showPopupMenu(view, review)
+            result.onFailure { e ->
+                Toast.makeText(requireContext(), "Error: ${e.message}", Toast.LENGTH_SHORT).show()
             }
         }
 
-        private fun showPopupMenu(view: View, review: Review) {
-            val popup = PopupMenu(view.context, view)
-            popup.menu.add(0, 1, 0, "Editar")
-            popup.menu.add(0, 2, 1, "Eliminar")
+        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
+            binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
+        }
+    }
 
-            popup.setOnMenuItemClickListener { item ->
-                when (item.itemId) {
-                    1 -> { onEdit(review); true }
-                    2 -> { onDelete(review); true }
-                    else -> false
+    private fun showDeleteDialog(review: Review) {
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Eliminar Reseña")
+            .setMessage("¿Borrar tu opinión sobre ${review.recipeName}?")
+            .setPositiveButton("Eliminar") { _, _ -> viewModel.deleteReview(review) }
+            .setNegativeButton("Cancelar", null)
+            .show()
+    }
+
+    private fun showEditDialog(review: Review) {
+        val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_review, null)
+        val ratingBar = view.findViewById<RatingBar>(R.id.rating_bar)
+        val etComment = view.findViewById<EditText>(R.id.et_comment)
+
+        ratingBar.rating = review.rating
+        etComment.setText(review.comment)
+
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Editar Reseña")
+            .setView(view)
+            .setPositiveButton("Actualizar") { _, _ ->
+                val newComment = etComment.text.toString().trim()
+                if (newComment.isNotBlank()) {
+                    viewModel.editReview(review, ratingBar.rating, newComment)
                 }
             }
-            popup.show()
-        }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
-    // Clase para comparar listas y animar cambios
-    class UserReviewDiffCallback : DiffUtil.ItemCallback<Review>() {
-        override fun areItemsTheSame(oldItem: Review, newItem: Review) = oldItem.id == newItem.id
-        override fun areContentsTheSame(oldItem: Review, newItem: Review) = oldItem == newItem
+    override fun onDestroyView() {
+        super.onDestroyView()
+        _binding = null
     }
 }

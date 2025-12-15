@@ -28,21 +28,17 @@ class ReviewAdapter : ListAdapter<Review, ReviewAdapter.ReviewViewHolder>(Review
             binding.tvComment.text = review.comment
             binding.rbRating.rating = review.rating
 
-            // Formatear fecha (ej: "Hace 2 horas")
-            val niceDate = DateUtils.getRelativeTimeSpanString(
-                review.timestamp.time,
-                System.currentTimeMillis(),
-                DateUtils.MINUTE_IN_MILLIS
-            )
-            binding.tvDate.text = niceDate
+            try {
+                val date = DateUtils.getRelativeTimeSpanString(
+                    review.timestamp.time, System.currentTimeMillis(), DateUtils.MINUTE_IN_MILLIS
+                )
+                binding.tvDate.text = date
+            } catch (e: Exception) {
+                binding.tvDate.text = "Reciente"
+            }
 
-            // Cargar foto de usuario
             if (review.userPhotoUrl.isNotEmpty()) {
-                Glide.with(binding.root)
-                    .load(review.userPhotoUrl)
-                    .circleCrop()
-                    .placeholder(R.drawable.ic_person)
-                    .into(binding.ivUserPhoto)
+                Glide.with(binding.root).load(review.userPhotoUrl).circleCrop().into(binding.ivUserPhoto)
             } else {
                 binding.ivUserPhoto.setImageResource(R.drawable.ic_person)
             }

@@ -56,23 +56,31 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     val isTranslated: LiveData<Boolean> = _isTranslated
 
     // === RESEÑAS / REVIEWS ===
-    private val _reviews = MutableLiveData<List<Review>>() // Detalle
+    private val _reviews = MutableLiveData<List<Review>>()
     val reviews: LiveData<List<Review>> = _reviews
 
-    private val _userReviews = MutableLiveData<List<Review>>() // Perfil
+    private val _userReviews = MutableLiveData<List<Review>>()
     val userReviews: LiveData<List<Review>> = _userReviews
 
-    private val _reviewUploadResult = MutableLiveData<Result<Boolean>>()
-    val reviewUploadResult: LiveData<Result<Boolean>> = _reviewUploadResult
+    // Corrección para el mensaje fantasma: hacerlo nullable
+    private val _reviewUploadResult = MutableLiveData<Result<Boolean>?>()
+    val reviewUploadResult: LiveData<Result<Boolean>?> = _reviewUploadResult
 
-    private val _reviewActionState = MutableLiveData<Result<String>>() // Mensajes editar/borrar
+    private val _reviewActionState = MutableLiveData<Result<String>>()
     val reviewActionState: LiveData<Result<String>> = _reviewActionState
+
+    // === PERFIL PÚBLICO ===
+    private val _publicUserRecipes = MutableLiveData<List<Recipe>>()
+    val publicUserRecipes: LiveData<List<Recipe>> = _publicUserRecipes
+
+    private val _publicUserReviews = MutableLiveData<List<Review>>()
+    val publicUserReviews: LiveData<List<Review>> = _publicUserReviews
 
     init {
         viewModelScope.launch { translator.prepareModel() }
     }
 
-    // === Lógica existente ===
+    // === Funciones Existentes ===
     fun loadMyRecipes() {
         viewModelScope.launch { repository.getUserRecipes().onSuccess { _myRecipes.value = it } }
     }
@@ -85,7 +93,33 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             _selectedRecipe.value = formatted
             _isTranslated.value = false
             _isRecipeFavorite.value = null
-            _reviews.value = emptyList() // Limpiar reseñas previas
+            _reviews.value = emptyList()
+
+            // CORRECCIÓN: Limpiar el estado de subida
+            _reviewUploadResult.value = null
+
+            // === AUTO-REPARACIÓN ===
+            // Si la receta parece incompleta (sin instrucciones ni ingredientes), la recargamos.
+            if (formatted.instructions.isBlank() && formatted.ingredients.isEmpty()) {
+                loadFullRecipeDetails(formatted.id)
+            }
+        }
+    }
+
+    // NUEVO: Función para descargar receta completa por ID
+    fun loadFullRecipeDetails(recipeId: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            repository.getRecipeById(recipeId).onSuccess { recipe ->
+                // Actualizamos la receta seleccionada con la versión completa
+                val formatted = translator.formatRecipeInstructions(recipe)
+                originalRecipeCache = formatted
+                translatedRecipeCache = null
+                _selectedRecipe.value = formatted
+            }.onFailure {
+                // Si falla, el usuario se queda con lo que tiene (evita crash)
+            }
+            _isLoading.value = false
         }
     }
 
@@ -173,7 +207,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     fun getActiveFiltersCount() = 0
     fun loadFeaturedRecipes() { loadHomeContent() }
 
-    // === RESEÑAS (ESTAS FUNCIONES AHORA ESTÁN CORRECTAMENTE IMPLEMENTADAS) ===
+    // === RESEÑAS ===
 
     fun loadReviews(recipeId: String) {
         viewModelScope.launch {
@@ -183,7 +217,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // CORREGIDO: Ahora usa los 5 parámetros correctos
     fun submitReview(recipeId: String, rating: Float, comment: String) {
         if (rating == 0f) {
             _error.value = "Por favor selecciona una calificación"
@@ -205,7 +238,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // Esta función permite al fragmento cargar las reseñas (soluciona "Unresolved reference: loadUserReviews")
     fun loadUserReviews() {
         _isLoading.value = true
         viewModelScope.launch {
@@ -213,13 +245,12 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                 _userReviews.value = it
             }.onFailure { e ->
                 _userReviews.value = emptyList()
-                _reviewActionState.value = Result.failure(e) // Mostrar error para crear índice
+                _reviewActionState.value = Result.failure(e)
             }
             _isLoading.value = false
         }
     }
 
-    // Soluciona "Unresolved reference: deleteReview"
     fun deleteReview(review: Review) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -233,7 +264,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // Soluciona "Unresolved reference: editReview"
     fun editReview(review: Review, newRating: Float, newComment: String) {
         _isLoading.value = true
         viewModelScope.launch {
@@ -242,6 +272,20 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                 loadUserReviews()
             }.onFailure {
                 _reviewActionState.value = Result.failure(it)
+            }
+            _isLoading.value = false
+        }
+    }
+
+    // === PERFIL PÚBLICO ===
+    fun loadPublicUserContent(userId: String) {
+        _isLoading.value = true
+        viewModelScope.launch {
+            repository.getUserRecipes(userId).onSuccess {
+                _publicUserRecipes.value = it
+            }
+            repository.getUserReviews(userId).onSuccess {
+                _publicUserReviews.value = it
             }
             _isLoading.value = false
         }

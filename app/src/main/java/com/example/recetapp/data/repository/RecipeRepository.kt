@@ -6,6 +6,7 @@ import com.example.recetapp.data.model.*
 import com.example.recetapp.data.network.ApiManager
 import com.example.recetapp.data.network.SpoonacularApi
 import com.google.firebase.auth.FirebaseAuth
+import com.google.firebase.firestore.FieldPath
 import com.google.firebase.firestore.FirebaseFirestore
 import com.google.firebase.storage.FirebaseStorage
 import kotlinx.coroutines.async
@@ -73,12 +74,46 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    suspend fun getUserRecipes(): Result<List<Recipe>> {
+    suspend fun getUserRecipes(targetUserId: String? = null): Result<List<Recipe>> {
         return try {
-            val userId = auth.currentUser?.uid ?: return Result.success(emptyList())
+            val userId = targetUserId ?: auth.currentUser?.uid ?: return Result.success(emptyList())
             val snapshot = firestore.collection("usuarios").document(userId)
                 .collection("mis_recetas").get().await()
             Result.success(snapshot.toObjects(Recipe::class.java))
+        } catch (e: Exception) { Result.failure(e) }
+    }
+
+    // === BUSCAR RECETA POR ID (SOLUCIÓN ROBUSTA) ===
+    suspend fun getRecipeById(id: String): Result<Recipe> {
+        return try {
+            when {
+                // 1. Es de Spoonacular (tiene prefijo spoon_)
+                id.startsWith("spoon_") -> {
+                    val spoonId = id.removePrefix("spoon_").toIntOrNull() ?: return Result.failure(Exception("ID inválido"))
+                    val response = spoonacularApi.getRecipeById(spoonId, SpoonacularApi.API_KEY)
+                    val body = response.body()
+                    if (body != null) Result.success(body.toRecipe()) else Result.failure(Exception("Error API Spoonacular"))
+                }
+                // 2. Es de MealDB (solo números)
+                id.all { it.isDigit() } -> {
+                    val response = mealDbApi.getRecipeById(id)
+                    val meal = response.body()?.meals?.firstOrNull()
+                    if (meal != null) Result.success(meal.toRecipe()) else Result.failure(Exception("Error API MealDB"))
+                }
+                // 3. Es de un Usuario (UUID) - Buscamos en todo Firestore
+                else -> {
+                    // Buscamos en el grupo de colecciones "mis_recetas" usando el ID del documento
+                    val snapshot = firestore.collectionGroup("mis_recetas")
+                        .whereEqualTo(FieldPath.documentId(), id)
+                        .get().await()
+
+                    // Si no encuentra por ID de documento, intentamos por el campo 'id' interno
+                    val recipe = snapshot.documents.firstOrNull()?.toObject(Recipe::class.java)
+                        ?: firestore.collectionGroup("mis_recetas").whereEqualTo("id", id).get().await().documents.firstOrNull()?.toObject(Recipe::class.java)
+
+                    if (recipe != null) Result.success(recipe) else Result.failure(Exception("Receta no encontrada"))
+                }
+            }
         } catch (e: Exception) { Result.failure(e) }
     }
 
@@ -189,9 +224,8 @@ class RecipeRepository {
         Result.success(mealDbApi.getCategories().body()?.categories?.map { it.name } ?: emptyList())
     } catch(e:Exception) { Result.failure(e) }
 
-    // ==================== RESEÑAS / REVIEWS (CORREGIDO) ====================
+    // ==================== RESEÑAS / REVIEWS ====================
 
-    // Esta función recibe 5 parámetros ahora. Asegúrate de copiar esto.
     suspend fun addReview(recipeId: String, recipeName: String, recipeImageUrl: String, rating: Float, comment: String): Result<Boolean> {
         return try {
             val user = auth.currentUser ?: return Result.failure(Exception("Debes iniciar sesión"))
@@ -224,10 +258,9 @@ class RecipeRepository {
         }
     }
 
-    // Esta función faltaba (Collection Group)
-    suspend fun getUserReviews(): Result<List<Review>> {
+    suspend fun getUserReviews(targetUserId: String? = null): Result<List<Review>> {
         return try {
-            val userId = auth.currentUser?.uid ?: return Result.failure(Exception("No logueado"))
+            val userId = targetUserId ?: auth.currentUser?.uid ?: return Result.failure(Exception("No logueado"))
             val snapshot = firestore.collectionGroup("reviews")
                 .whereEqualTo("userId", userId)
                 .orderBy("timestamp", com.google.firebase.firestore.Query.Direction.DESCENDING)
@@ -236,7 +269,6 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // Esta función faltaba
     suspend fun deleteReview(recipeId: String, reviewId: String): Result<Boolean> {
         return try {
             firestore.collection("recetas_data").document(recipeId)
@@ -246,7 +278,6 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // Esta función faltaba
     suspend fun updateReview(recipeId: String, reviewId: String, newRating: Float, newComment: String): Result<Boolean> {
         return try {
             val updates = mapOf("rating" to newRating, "comment" to newComment, "timestamp" to java.util.Date())

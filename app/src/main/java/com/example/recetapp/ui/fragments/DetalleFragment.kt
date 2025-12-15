@@ -12,6 +12,7 @@ import android.widget.Toast
 import androidx.core.content.ContextCompat
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
+import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -20,6 +21,7 @@ import com.example.recetapp.data.model.RecipeSource
 import com.example.recetapp.data.model.RecipeTranslations
 import com.example.recetapp.databinding.FragmentDetalleBinding
 import com.example.recetapp.ui.adapters.ReviewAdapter
+import com.example.recetapp.ui.viewmodel.AuthViewModel
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
 import com.google.firebase.auth.FirebaseAuth
@@ -29,6 +31,7 @@ class DetalleFragment : Fragment() {
     private var _binding: FragmentDetalleBinding? = null
     private val binding get() = _binding!!
     private val viewModel: RecipeViewModel by activityViewModels()
+    private val authViewModel: AuthViewModel by viewModels()
     private val reviewAdapter = ReviewAdapter()
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -58,7 +61,6 @@ class DetalleFragment : Fragment() {
         binding.ivFavorito.setOnClickListener {
             viewModel.selectedRecipe.value?.let { recipe ->
                 viewModel.toggleFavorite(recipe)
-                // === CORRECCIÓN AQUÍ: Mensaje invertido arreglado ===
                 val msg = if (viewModel.isRecipeFavorite.value == true) "Añadido a favoritos" else "Eliminado de favoritos"
                 Toast.makeText(context, msg, Toast.LENGTH_SHORT).show()
             }
@@ -98,19 +100,26 @@ class DetalleFragment : Fragment() {
                 Glide.with(this@DetalleFragment).load(recipe.imageUrl).centerCrop().into(ivRecipeImage)
 
                 if (recipe.source == RecipeSource.USER) {
-                    val autor = when {
-                        recipe.userId == currentUserId -> "Mí"
-                        recipe.creatorName.isNotBlank() -> recipe.creatorName
-                        else -> "Anónimo"
-                    }
+                    authViewModel.checkIfFollowing(recipe.userId)
+
+                    val autor = recipe.creatorName.ifBlank { "Anónimo" }
                     tvSource.text = "Por: $autor"
-                    tvSource.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.teal_700))
+
+                    btnFollow.visibility = View.VISIBLE
+
+                    btnFollow.setOnClickListener {
+                        if (currentUserId == null) {
+                            Toast.makeText(context, "Inicia sesión para seguir", Toast.LENGTH_SHORT).show()
+                        } else if (currentUserId == recipe.userId) {
+                            Toast.makeText(context, "Eres tú mismo", Toast.LENGTH_SHORT).show()
+                        } else {
+                            authViewModel.toggleFollow(recipe.userId)
+                        }
+                    }
                 } else {
                     tvSource.text = if (recipe.source == RecipeSource.THEMEALDB) "MealDB" else "Spoonacular"
-                    val colorRes = if (recipe.source == RecipeSource.THEMEALDB) R.color.orange_primary else R.color.purple_500
-                    tvSource.setBackgroundColor(ContextCompat.getColor(requireContext(), colorRes))
+                    btnFollow.visibility = View.GONE
                 }
-                tvSource.visibility = View.VISIBLE
 
                 val info = StringBuilder()
                 if (recipe.readyInMinutes != null) info.append("⏱ ${recipe.readyInMinutes} min  ")
@@ -137,6 +146,23 @@ class DetalleFragment : Fragment() {
                     tvProtein.text = "Prot: ${recipe.nutrition.protein.toInt()}g"
                     tvFat.text = "Grasa: ${recipe.nutrition.fat.toInt()}g"
                     tvCarbs.text = "Carbs: ${recipe.nutrition.carbs.toInt()}g"
+                }
+            }
+        }
+
+        authViewModel.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
+            val recipe = viewModel.selectedRecipe.value ?: return@observe
+            if (recipe.source == RecipeSource.USER) {
+                if (isFollowing) {
+                    binding.btnFollow.text = "Siguiendo"
+                    binding.btnFollow.setIconResource(R.drawable.ic_favorite)
+                    binding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.background_gray))
+                    binding.btnFollow.setTextColor(ContextCompat.getColor(requireContext(), R.color.text_primary))
+                } else {
+                    binding.btnFollow.text = "Seguir"
+                    binding.btnFollow.setIconResource(R.drawable.ic_person)
+                    binding.btnFollow.setBackgroundColor(ContextCompat.getColor(requireContext(), R.color.orange_primary))
+                    binding.btnFollow.setTextColor(ContextCompat.getColor(requireContext(), R.color.white))
                 }
             }
         }
@@ -169,10 +195,11 @@ class DetalleFragment : Fragment() {
             binding.rvReviews.visibility = if (reviews.isEmpty()) View.GONE else View.VISIBLE
         }
 
+        // CORRECCIÓN: Uso seguro de ?.
         viewModel.reviewUploadResult.observe(viewLifecycleOwner) { result ->
-            result.onSuccess {
+            result?.onSuccess {
                 Toast.makeText(context, "¡Reseña publicada!", Toast.LENGTH_SHORT).show()
-            }.onFailure {
+            }?.onFailure {
                 Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show()
             }
         }

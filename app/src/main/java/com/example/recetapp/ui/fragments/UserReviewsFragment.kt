@@ -43,9 +43,7 @@ class UserReviewsFragment : Fragment() {
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
         adapter = UserReviewsAdapter(
-            onRecipeClick = { review ->
-                navigateToRecipeDetail(review)
-            },
+            onRecipeClick = { review -> navigateToRecipeDetail(review) },
             onEditClick = { review -> showEditDialog(review) },
             onDeleteClick = { review -> showDeleteDialog(review) }
         )
@@ -61,8 +59,10 @@ class UserReviewsFragment : Fragment() {
             imageUrl = review.recipeImageUrl,
             thumbnailUrl = review.recipeImageUrl
         )
-
         viewModel.setSelectedRecipe(tempRecipe)
+
+        // CORRECCIÓN: Asegurar descarga completa antes de ir al detalle
+        viewModel.loadFullRecipeDetails(review.recipeId)
 
         try {
             findNavController().navigate(R.id.action_userReviewsFragment_to_detalleFragment)

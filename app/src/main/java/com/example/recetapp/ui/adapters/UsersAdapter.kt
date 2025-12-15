@@ -12,7 +12,8 @@ class UsersAdapter(
     private val users: List<User>,
     private val isAdmin: Boolean,
     private val onEditClick: (User) -> Unit,
-    private val onDeleteClick: (User) -> Unit
+    private val onDeleteClick: (User) -> Unit,
+    private val onUserClick: (User) -> Unit = {} // NUEVO CALLBACK
 ) : RecyclerView.Adapter<UsersAdapter.UserViewHolder>() {
 
     inner class UserViewHolder(private val binding: ItemUserBinding) : RecyclerView.ViewHolder(binding.root) {
@@ -22,7 +23,6 @@ class UsersAdapter(
             binding.tvUserEmail.text = user.email
             binding.tvUserId.text = "ID: ${user.id}"
 
-            // Badge ADMIN
             if (user.rol == UserRole.ADMIN) {
                 binding.tvUserRole.visibility = View.VISIBLE
                 binding.tvUserRole.text = "ADMIN"
@@ -30,7 +30,6 @@ class UsersAdapter(
                 binding.tvUserRole.visibility = View.GONE
             }
 
-            // Botones de acción (solo si es admin)
             if (isAdmin) {
                 binding.llActions.visibility = View.VISIBLE
                 binding.btnEdit.setOnClickListener { onEditClick(user) }
@@ -38,6 +37,9 @@ class UsersAdapter(
             } else {
                 binding.llActions.visibility = View.GONE
             }
+
+            // Click en la tarjeta completa para ir al perfil público
+            binding.root.setOnClickListener { onUserClick(user) }
         }
     }
 
