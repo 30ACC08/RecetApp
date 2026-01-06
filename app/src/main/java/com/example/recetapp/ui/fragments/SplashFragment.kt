@@ -31,10 +31,15 @@ class SplashFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Esperar 2 segundos y verificar sesión
         Handler(Looper.getMainLooper()).postDelayed({
-            if (viewModel.isLoggedIn()) {
+            // CORRECCIÓN: Usamos currentUser.value en lugar de isLoggedIn()
+            // AuthViewModel carga el usuario automáticamente al iniciarse
+            if (viewModel.currentUser.value != null) {
+                // Usuario logueado -> Ir a Inicio
                 findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
             } else {
+                // No logueado -> Ir a Login
                 findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
             }
         }, 2000)

@@ -14,6 +14,7 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.coroutineScope
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import java.util.Date
 
 data class HomeContent(
     val featured: List<Recipe>,
@@ -56,7 +57,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     private val _isTranslated = MutableLiveData(false)
     val isTranslated: LiveData<Boolean> = _isTranslated
 
-    // === MENSAJES (TOAST) - Variable que faltaba ===
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
 
@@ -122,7 +122,14 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
 
     private suspend fun performSearch(query: String) {
         _searchState.value = UiState.Loading
-        val filter = _currentFilter.value?.copy(query = query) ?: RecipeFilter(query = query)
+
+        // --- TRADUCCIÓN DE BÚSQUEDA ---
+        // Intentamos traducir la query del español al inglés si coincide con una categoría o área
+        val translatedQuery = RecipeTranslations.getCategoryKey(query)
+            ?: RecipeTranslations.getAreaKey(query)
+            ?: query
+
+        val filter = _currentFilter.value?.copy(query = translatedQuery) ?: RecipeFilter(query = translatedQuery)
         _currentFilter.value = filter
 
         repository.searchRecipes(filter)
@@ -158,7 +165,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     }
 
     fun toggleFavorite(recipe: Recipe) {
-        // Verificar si hay usuario logueado
         if (FirebaseAuth.getInstance().currentUser == null) {
             _toastMessage.value = "Debes iniciar sesión para guardar favoritos"
             return
@@ -274,13 +280,28 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         if (rating == 0f) return
         val recipeName = _selectedRecipe.value?.name ?: "Receta"
         val recipeImage = _selectedRecipe.value?.imageUrl ?: ""
+        val currentUser = FirebaseAuth.getInstance().currentUser
 
         _isLoadingAction.value = true
         viewModelScope.launch {
             val result = repository.addReview(recipeId, recipeName, recipeImage, rating, comment)
             _reviewUploadResult.value = result
+
             if (result.isSuccess) {
-                loadReviews(recipeId)
+                // --- ACTUALIZACIÓN INMEDIATA (OPTIMISTA) ---
+                val newReview = Review(
+                    id = "temp_${System.currentTimeMillis()}",
+                    recipeId = recipeId,
+                    userId = currentUser?.uid ?: "",
+                    userName = currentUser?.displayName ?: "Yo",
+                    userPhotoUrl = currentUser?.photoUrl?.toString() ?: "",
+                    rating = rating,
+                    comment = comment,
+                    timestamp = Date()
+                )
+                val currentList = _reviews.value.orEmpty().toMutableList()
+                currentList.add(0, newReview)
+                _reviews.value = currentList
             }
             _isLoadingAction.value = false
         }

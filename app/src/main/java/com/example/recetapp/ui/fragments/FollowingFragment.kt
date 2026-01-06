@@ -9,60 +9,51 @@ import androidx.fragment.app.viewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
-import com.example.recetapp.databinding.FragmentAdminBinding
+import com.example.recetapp.databinding.FragmentFollowingBinding
 import com.example.recetapp.ui.adapters.UsersAdapter
 import com.example.recetapp.ui.viewmodel.AuthViewModel
 
 class FollowingFragment : Fragment() {
 
-    private var _binding: FragmentAdminBinding? = null
+    private var _binding: FragmentFollowingBinding? = null
     private val binding get() = _binding!!
     private val viewModel: AuthViewModel by viewModels()
+    private lateinit var adapter: UsersAdapter
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
-        _binding = FragmentAdminBinding.inflate(inflater, container, false)
+        _binding = FragmentFollowingBinding.inflate(inflater, container, false)
         return binding.root
     }
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        binding.tvHeaderTitle.text = "Mi Comunidad"
-        binding.tvTitulo.text = "Personas que sigo"
-        binding.cvStats.visibility = View.GONE
-        binding.tvListaTitulo.visibility = View.GONE
-
+        // Configurar botón atrás
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        viewModel.loadFollowingList()
-
-        viewModel.followingList.observe(viewLifecycleOwner) { users ->
-            if (users.isEmpty()) {
-                binding.llEmptyState.visibility = View.VISIBLE
-                binding.recyclerViewUsers.visibility = View.GONE
-            } else {
-                binding.llEmptyState.visibility = View.GONE
-                binding.recyclerViewUsers.visibility = View.VISIBLE
-
-                val adapter = UsersAdapter(
-                    users = users,
-                    isAdmin = false,
-                    onEditClick = {},
-                    onDeleteClick = {},
-                    onUserClick = { user ->
-                        // NAVEGAR AL PERFIL PÚBLICO DEL USUARIO SELECCIONADO
-                        val bundle = Bundle().apply { putParcelable("user", user) }
-                        findNavController().navigate(R.id.action_followingFragment_to_publicProfileFragment, bundle)
-                    }
-                )
-                binding.recyclerViewUsers.layoutManager = LinearLayoutManager(context)
-                binding.recyclerViewUsers.adapter = adapter
+        // --- AQUÍ ESTÁ EL CAMBIO PRINCIPAL ---
+        // Instanciamos el adaptador indicando que NO es modo admin
+        adapter = UsersAdapter(
+            isAdminMode = false,
+            onUserClick = { user ->
+                // Al hacer clic, navegamos al perfil público de ese usuario
+                val bundle = Bundle().apply { putParcelable("user", user) }
+                findNavController().navigate(R.id.action_global_publicProfileFragment, bundle)
             }
+        )
+
+        binding.rvFollowing.layoutManager = LinearLayoutManager(context)
+        binding.rvFollowing.adapter = adapter
+
+        // Observar la lista de seguidos
+        viewModel.followingList.observe(viewLifecycleOwner) { users ->
+            adapter.submitList(users)
+            // Mostrar mensaje si la lista está vacía (asegúrate de tener tvEmpty en tu XML)
+            binding.tvEmpty.visibility = if (users.isEmpty()) View.VISIBLE else View.GONE
         }
 
-        viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
-            binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
-        }
+        // Cargar datos
+        viewModel.loadFollowingList()
     }
 
     override fun onDestroyView() {

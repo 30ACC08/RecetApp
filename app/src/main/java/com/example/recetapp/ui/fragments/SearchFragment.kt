@@ -15,6 +15,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
 import com.example.recetapp.data.model.RecipeFilter
+import com.example.recetapp.data.model.User
 import com.example.recetapp.databinding.FragmentSearchBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
@@ -51,6 +52,11 @@ class SearchFragment : Fragment() {
             onFavoriteClick = { recipe ->
                 viewModel.toggleFavorite(recipe)
                 Toast.makeText(context, "Actualizando favoritos...", Toast.LENGTH_SHORT).show()
+            },
+            onUserClick = { userId ->
+                val user = User(id = userId)
+                val bundle = Bundle().apply { putParcelable("user", user) }
+                findNavController().navigate(R.id.action_global_publicProfileFragment, bundle)
             }
         )
         binding.rvSearchResults.apply {
@@ -88,7 +94,6 @@ class SearchFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // Observamos searchState (UiState)
         viewModel.searchState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is UiState.Loading -> {

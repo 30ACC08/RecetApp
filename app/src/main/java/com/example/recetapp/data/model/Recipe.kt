@@ -7,7 +7,7 @@ import kotlinx.parcelize.Parcelize
 data class Recipe(
     val id: String = "",
     val userId: String = "",
-    val creatorName: String = "", // <--- NUEVO: Nombre del chef
+    val creatorName: String = "",
     val name: String = "",
     val category: String = "",
     val area: String = "",
@@ -30,7 +30,8 @@ data class Recipe(
     val dairyFree: Boolean = false,
     val veryHealthy: Boolean = false,
     val sustainable: Boolean = false,
-    val nutrition: Nutrition? = null
+    val nutrition: Nutrition? = null,
+    val likesCount: Int = 0 // <--- NUEVO: Contador de likes
 ) : Parcelable
 
 @Parcelize
@@ -67,7 +68,6 @@ data class RecipeFilter(
 
 enum class SortOption { POPULARITY, TIME, HEALTH_SCORE, CALORIES, PRICE }
 
-// DICCIONARIO DE TRADUCCIÓN (Igual que antes)
 object RecipeTranslations {
     val CATEGORIES = mapOf(
         "Breakfast" to "Desayuno", "Dessert" to "Postres", "Seafood" to "Mariscos",
@@ -82,8 +82,10 @@ object RecipeTranslations {
     )
     fun categoryName(original: String): String = CATEGORIES[original] ?: original
     fun areaName(original: String): String = AREAS[original] ?: original
-    fun getCategoryKey(spanish: String): String? = CATEGORIES.entries.find { it.value == spanish }?.key
-    fun getAreaKey(spanish: String): String? = AREAS.entries.find { it.value == spanish }?.key
+
+    // Funciones para búsqueda inversa (Español -> Inglés)
+    fun getCategoryKey(spanish: String): String? = CATEGORIES.entries.find { it.value.equals(spanish, ignoreCase = true) }?.key
+    fun getAreaKey(spanish: String): String? = AREAS.entries.find { it.value.equals(spanish, ignoreCase = true) }?.key
 }
 object RecipeCategories { val ALL = RecipeTranslations.CATEGORIES.keys.toList() }
 object RecipeAreas { val ALL = RecipeTranslations.AREAS.keys.toList() }

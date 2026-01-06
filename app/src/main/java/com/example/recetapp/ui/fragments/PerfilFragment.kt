@@ -4,6 +4,7 @@ import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
+import android.widget.EditText
 import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
@@ -53,7 +54,6 @@ class PerfilFragment : Fragment() {
         setupClickListeners()
         setupObservers()
 
-        // Cargar datos
         recipeViewModel.loadFavorites()
         recipeViewModel.loadMyRecipes()
         recipeViewModel.loadUserReviews()
@@ -87,43 +87,40 @@ class PerfilFragment : Fragment() {
     private fun setupObservers() {
         authViewModel.updateResult.observe(viewLifecycleOwner) { result ->
             result.onSuccess {
-                Toast.makeText(context, "¡Foto actualizada!", Toast.LENGTH_SHORT).show()
+                Toast.makeText(context, "¡Perfil actualizado!", Toast.LENGTH_SHORT).show()
                 lifecycleScope.launch { authViewModel.loadCurrentUser() }
             }
         }
 
+        // Estadísticas de Seguidores / Siguiendo
         authViewModel.userStats.observe(viewLifecycleOwner) { (followers, following) ->
             binding.tvSeguidores.text = followers.toString()
-            // Binding seguro a vistas que podrían ser null si el XML cambia
-            val textFollowingList = binding.llSiguiendo.findViewById<TextView>(R.id.tv_seguidores) // Reutilizamos ID o buscamos por índice
-            // Nota: En el XML corregido, llSiguiendo es un LinearLayout vertical.
-            // Accederemos a los contadores directamente por sus IDs en el include o estructura.
+            binding.tvSiguiendo.text = following.toString() // Ahora sí tenemos este TextView
         }
 
-        // Observar UiState
         recipeViewModel.favoritesState.observe(viewLifecycleOwner) { state ->
             val count = if (state is UiState.Success) state.data.size else 0
             binding.tvFavoritos.text = count.toString()
-            // Actualizar texto secundario si existe
-            val tvFavList = binding.llFavoritos.getChildAt(2) as? TextView
-            tvFavList?.text = count.toString()
         }
 
         recipeViewModel.myRecipesState.observe(viewLifecycleOwner) { state ->
             val count = if (state is UiState.Success) state.data.size else 0
             binding.tvRecetas.text = count.toString()
-            val tvMyRecipes = binding.llMisRecetas.getChildAt(2) as? TextView
-            tvMyRecipes?.text = count.toString()
-        }
-
-        recipeViewModel.userReviews.observe(viewLifecycleOwner) { reviews ->
-            val tvReviews = binding.llResenas.getChildAt(2) as? TextView
-            tvReviews?.text = reviews.size.toString()
         }
     }
 
     private fun setupClickListeners() {
         binding.ivPerfil.setOnClickListener { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
+
+        // Clic en la estadística "Siguiendo" -> Abre lista de personas seguidas
+        binding.llStatSiguiendo.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_followingFragment) }
+
+        // Clic en la estadística "Seguidores" -> Por ahora muestra un mensaje (o podrías crear un fragmento de seguidores)
+        binding.llStatSeguidores.setOnClickListener {
+            // Podrías reutilizar el adapter de usuarios si tuvieras la lógica de backend para traer seguidores
+            Toast.makeText(context, "Lista de seguidores próximamente", Toast.LENGTH_SHORT).show()
+        }
+
         binding.llMisRecetas.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_myRecipesFragment) }
         binding.llFavoritos.setOnClickListener { findNavController().navigate(R.id.favoritosFragment) }
         binding.llAdmin.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_adminFragment) }
@@ -134,15 +131,49 @@ class PerfilFragment : Fragment() {
             findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
         }
 
-        binding.llPreferencias.setOnClickListener { showDeleteAccountDialog() }
+        // Nuevo menú de Configuración
+        binding.llPreferencias.setOnClickListener { showSettingsDialog() }
+
         binding.llNotificaciones.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_notificationsFragment) }
         binding.llAyuda.setOnClickListener { Toast.makeText(context, "Soporte: help@recetapp.com", Toast.LENGTH_SHORT).show() }
+    }
+
+    private fun showSettingsDialog() {
+        val options = arrayOf("Editar Nombre", "Cambiar Foto", "Eliminar Cuenta", "Cancelar")
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Configuración de Cuenta")
+            .setItems(options) { dialog, which ->
+                when (which) {
+                    0 -> showEditNameDialog()
+                    1 -> pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly))
+                    2 -> showDeleteAccountDialog()
+                    3 -> dialog.dismiss()
+                }
+            }
+            .show()
+    }
+
+    private fun showEditNameDialog() {
+        val editText = EditText(context)
+        editText.hint = "Nuevo nombre"
+        MaterialAlertDialogBuilder(requireContext())
+            .setTitle("Actualizar Nombre")
+            .setView(editText)
+            .setPositiveButton("Guardar") { _, _ ->
+                val newName = editText.text.toString()
+                if (newName.isNotBlank()) {
+                    val user = authViewModel.currentUser.value
+                    user?.let { authViewModel.updateUserProfile(it.id, newName, null) }
+                }
+            }
+            .setNegativeButton("Cancelar", null)
+            .show()
     }
 
     private fun showDeleteAccountDialog() {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Eliminar Cuenta")
-            .setMessage("¿Estás seguro? Se borrará todo.")
+            .setMessage("¿Estás seguro? Se borrará todo permanentemente.")
             .setPositiveButton("Eliminar") { _, _ ->
                 authViewModel.currentUser.value?.let {
                     authViewModel.deleteUser(it.id, it.email)

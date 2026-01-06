@@ -12,9 +12,9 @@ import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
-import com.example.recetapp.databinding.FragmentAdminBinding
 import com.example.recetapp.data.model.User
 import com.example.recetapp.data.model.UserRole
+import com.example.recetapp.databinding.FragmentAdminBinding
 import com.example.recetapp.ui.adapters.UsersAdapter
 import com.example.recetapp.ui.viewmodel.AuthViewModel
 import com.google.android.material.dialog.MaterialAlertDialogBuilder
@@ -25,10 +25,9 @@ class AdminFragment : Fragment() {
     private var _binding: FragmentAdminBinding? = null
     private val binding get() = _binding!!
     private val viewModel: AuthViewModel by viewModels()
+    private lateinit var adapter: UsersAdapter
 
-    override fun onCreateView(
-        inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?
-    ): View {
+    override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
         _binding = FragmentAdminBinding.inflate(inflater, container, false)
         return binding.root
     }
@@ -38,10 +37,21 @@ class AdminFragment : Fragment() {
 
         lifecycleScope.launch { viewModel.loadCurrentUser() }
         setupClickListeners()
+        setupRecyclerView()
         setupObservers()
 
         // Cargar usuarios al iniciar
         viewModel.loadAllUsers()
+    }
+
+    private fun setupRecyclerView() {
+        adapter = UsersAdapter(
+            isAdminMode = true, // Activamos modo admin
+            onEditClick = { user -> showEditDialog(user) },
+            onDeleteClick = { user -> showDeleteConfirmation(user) }
+        )
+        binding.recyclerViewUsers.layoutManager = LinearLayoutManager(context)
+        binding.recyclerViewUsers.adapter = adapter
     }
 
     private fun setupClickListeners() {
@@ -49,53 +59,40 @@ class AdminFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // 1. Verificar Rol (CORREGIDO: solo si user != null)
+        // Verificar Rol
         viewModel.currentUser.observe(viewLifecycleOwner) { user ->
-            if (user != null) {
-                if (user.rol != UserRole.ADMIN) {
-                    Toast.makeText(context, "Acceso denegado", Toast.LENGTH_LONG).show()
-                    findNavController().popBackStack()
-                }
+            if (user != null && user.rol != UserRole.ADMIN) {
+                Toast.makeText(context, "Acceso denegado", Toast.LENGTH_LONG).show()
+                findNavController().popBackStack()
             }
         }
 
-        // 2. Lista de Usuarios
+        // Lista de Usuarios
         viewModel.allUsers.observe(viewLifecycleOwner) { users ->
             binding.tvTotalUsuarios.text = users.size.toString()
+
+            // Usamos submitList del ListAdapter
+            adapter.submitList(users)
+
             if (users.isEmpty()) {
                 binding.llEmptyState.visibility = View.VISIBLE
                 binding.recyclerViewUsers.visibility = View.GONE
             } else {
                 binding.llEmptyState.visibility = View.GONE
                 binding.recyclerViewUsers.visibility = View.VISIBLE
-
-                val adapter = UsersAdapter(
-                    users = users,
-                    isAdmin = true,
-                    onEditClick = { showEditDialog(it) },
-                    onDeleteClick = { showDeleteConfirmation(it) }
-                )
-                binding.recyclerViewUsers.layoutManager = LinearLayoutManager(context)
-                binding.recyclerViewUsers.adapter = adapter
             }
         }
 
-        // 3. Errores Generales (CORREGIDO: muestra por qué falla la carga)
         viewModel.generalError.observe(viewLifecycleOwner) { msg ->
-            Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
+            if (!msg.isNullOrBlank()) Toast.makeText(context, msg, Toast.LENGTH_LONG).show()
         }
 
         viewModel.isLoading.observe(viewLifecycleOwner) { isLoading ->
             binding.progressBar.visibility = if (isLoading) View.VISIBLE else View.GONE
         }
 
-        viewModel.updateResult.observe(viewLifecycleOwner) { result ->
-            result.onSuccess { Toast.makeText(context, "Actualizado", Toast.LENGTH_SHORT).show() }
-            result.onFailure { Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show() }
-        }
-
         viewModel.deleteResult.observe(viewLifecycleOwner) { result ->
-            result.onSuccess { Toast.makeText(context, "Eliminado", Toast.LENGTH_SHORT).show() }
+            result.onSuccess { Toast.makeText(context, "Usuario eliminado", Toast.LENGTH_SHORT).show() }
             result.onFailure { Toast.makeText(context, "Error: ${it.message}", Toast.LENGTH_SHORT).show() }
         }
     }
@@ -109,7 +106,10 @@ class AdminFragment : Fragment() {
             .setTitle("Editar Usuario")
             .setView(view)
             .setPositiveButton("Guardar") { _, _ ->
-                viewModel.updateUser(user.id, etNombre.text.toString().trim())
+                val nuevoNombre = etNombre.text.toString().trim()
+                if (nuevoNombre.isNotBlank()) {
+                    viewModel.updateUser(user.id, nuevoNombre)
+                }
             }
             .setNegativeButton("Cancelar", null)
             .show()
@@ -118,7 +118,7 @@ class AdminFragment : Fragment() {
     private fun showDeleteConfirmation(user: User) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Eliminar Usuario")
-            .setMessage("¿Eliminar a ${user.nombre}?")
+            .setMessage("¿Estás seguro de eliminar a ${user.nombre}?\nEsta acción es irreversible.")
             .setPositiveButton("Eliminar") { _, _ ->
                 viewModel.deleteUser(user.id, user.email)
             }

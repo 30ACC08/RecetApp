@@ -21,7 +21,6 @@ class MyRecipesFragment : Fragment() {
 
     private var _binding: FragmentMyRecipesBinding? = null
     private val binding get() = _binding!!
-    // Ahora usamos el ViewModel compartido
     private val viewModel: RecipeViewModel by activityViewModels()
     private lateinit var adapter: RecipeAdapter
 
@@ -39,7 +38,6 @@ class MyRecipesFragment : Fragment() {
 
     private fun setupUI() {
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
-
         binding.btnAddRecipe.setOnClickListener {
             findNavController().navigate(R.id.action_myRecipesFragment_to_createRecipeFragment)
         }
@@ -49,9 +47,8 @@ class MyRecipesFragment : Fragment() {
                 val bundle = Bundle().apply { putParcelable("recipe", recipe) }
                 findNavController().navigate(R.id.action_myRecipesFragment_to_createRecipeFragment, bundle)
             },
-            onFavoriteClick = { recipe ->
-                showDeleteDialog(recipe)
-            },
+            onFavoriteClick = { recipe -> showDeleteDialog(recipe) },
+            onUserClick = {}, // Sin acción en mis recetas
             isMyRecipesMode = true
         )
 
@@ -59,6 +56,7 @@ class MyRecipesFragment : Fragment() {
         binding.rvMyRecipes.adapter = adapter
     }
 
+    // ... (setupObservers, showDeleteDialog, onDestroyView igual que original)
     private fun setupObservers() {
         viewModel.myRecipesState.observe(viewLifecycleOwner) { state ->
             when (state) {

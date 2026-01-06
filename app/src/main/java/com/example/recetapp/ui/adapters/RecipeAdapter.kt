@@ -13,17 +13,18 @@ import com.example.recetapp.data.model.RecipeSource
 import com.example.recetapp.data.model.RecipeTranslations
 import com.example.recetapp.databinding.ItemRecipeBinding
 import com.example.recetapp.databinding.ItemRecipeCompactBinding
-import com.google.firebase.auth.FirebaseAuth // <--- Importante
+import com.google.firebase.auth.FirebaseAuth
 
 class RecipeAdapter(
     private val onRecipeClick: (Recipe) -> Unit,
     private val onFavoriteClick: (Recipe) -> Unit = {},
+    private val onUserClick: (String) -> Unit = {}, // <--- Callback para ir al perfil
     private val isMyRecipesMode: Boolean = false
 ) : ListAdapter<Recipe, RecipeAdapter.RecipeViewHolder>(RecipeDiffCallback()) {
 
     override fun onCreateViewHolder(parent: ViewGroup, viewType: Int): RecipeViewHolder {
         val binding = ItemRecipeBinding.inflate(LayoutInflater.from(parent.context), parent, false)
-        return RecipeViewHolder(binding, onRecipeClick, onFavoriteClick, isMyRecipesMode)
+        return RecipeViewHolder(binding, onRecipeClick, onFavoriteClick, onUserClick, isMyRecipesMode)
     }
 
     override fun onBindViewHolder(holder: RecipeViewHolder, position: Int) {
@@ -34,6 +35,7 @@ class RecipeAdapter(
         private val binding: ItemRecipeBinding,
         private val onRecipeClick: (Recipe) -> Unit,
         private val onFavoriteClick: (Recipe) -> Unit,
+        private val onUserClick: (String) -> Unit,
         private val isMyRecipesMode: Boolean
     ) : RecyclerView.ViewHolder(binding.root) {
 
@@ -51,28 +53,43 @@ class RecipeAdapter(
                 Glide.with(context).load(recipe.imageUrl)
                     .placeholder(R.drawable.ic_launcher_background).centerCrop().into(ivRecipeImage)
 
-                // === CORRECCIÓN DE NOMBRE ===
+                // LÓGICA DE FUENTE Y CLIC EN USUARIO
                 if (recipe.source == RecipeSource.USER) {
                     val autor = when {
-                        recipe.userId == currentUserId -> "Mí" // Si soy yo
-                        recipe.creatorName.isNotBlank() -> recipe.creatorName // Si tiene nombre
-                        else -> "Anónimo" // Fallback
+                        recipe.userId == currentUserId -> "Mí"
+                        recipe.creatorName.isNotBlank() -> recipe.creatorName
+                        else -> "Anónimo"
                     }
                     tvSource.text = "Por: $autor"
                     tvSource.setBackgroundColor(context.getColor(R.color.teal_700))
+
+                    // Solo activamos el click si no soy yo y hay un ID válido
+                    if (recipe.userId.isNotBlank() && recipe.userId != currentUserId) {
+                        tvSource.setOnClickListener { onUserClick(recipe.userId) }
+                    } else {
+                        tvSource.setOnClickListener(null)
+                    }
                 } else {
                     tvSource.text = if (recipe.source == RecipeSource.THEMEALDB) "MealDB" else "Spoonacular"
                     tvSource.setBackgroundColor(context.getColor(
                         if (recipe.source == RecipeSource.THEMEALDB) R.color.orange_primary else R.color.purple_500
                     ))
+                    tvSource.setOnClickListener(null)
                 }
 
+                // TIEMPO
                 tvTime.visibility = if (recipe.readyInMinutes != null) View.VISIBLE else View.GONE
                 tvTime.text = "⏱ ${recipe.readyInMinutes} min"
 
-                tvHealthScore.visibility = if (recipe.healthScore != null) View.VISIBLE else View.GONE
-                tvHealthScore.text = "❤️ ${recipe.healthScore?.toInt()}"
+                // CONTADOR DE LIKES (REAL)
+                if (recipe.likesCount > 0) {
+                    tvLikesCount.visibility = View.VISIBLE
+                    tvLikesCount.text = recipe.likesCount.toString()
+                } else {
+                    tvLikesCount.visibility = View.GONE
+                }
 
+                // BOTÓN FAVORITO
                 if (isMyRecipesMode) {
                     btnFavorite.setImageResource(android.R.drawable.ic_menu_delete)
                     btnFavorite.setColorFilter(context.getColor(R.color.error))

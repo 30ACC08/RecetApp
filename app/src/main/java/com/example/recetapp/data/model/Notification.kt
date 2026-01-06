@@ -10,14 +10,14 @@ data class Notification(
     val fromUserId: String = "",
     val fromUserName: String = "",
     val fromUserPhotoUrl: String = "",
-    val relatedId: String = "", // ID de la receta o usuario relacionado
+    val relatedId: String = "",
     val read: Boolean = false,
     val timestamp: Date = Date()
 )
 
 enum class NotificationType {
-    FOLLOW, // Alguien te siguió
-    REVIEW, // Alguien comentó tu receta
-    LIKE,   // Alguien dio like
-    INFO    // Sistema
+    FOLLOW,
+    REVIEW,
+    LIKE,
+    INFO
 }

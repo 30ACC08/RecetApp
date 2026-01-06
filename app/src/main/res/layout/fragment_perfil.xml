@@ -64,7 +64,7 @@
         <androidx.cardview.widget.CardView
             android:layout_width="match_parent"
             android:layout_height="wrap_content"
-            android:layout_marginHorizontal="24dp"
+            android:layout_marginHorizontal="16dp"
             android:layout_marginTop="-20dp"
             app:cardCornerRadius="12dp"
             app:cardElevation="4dp">
@@ -73,15 +73,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:orientation="horizontal"
-                android:paddingVertical="16dp">
+                android:paddingVertical="16dp"
+                android:baselineAligned="false">
 
                 <LinearLayout
-                    android:id="@+id/ll_siguiendo"
+                    android:id="@+id/ll_stat_seguidores"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
                     android:gravity="center"
-                    android:orientation="vertical">
+                    android:orientation="vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true">
 
                     <TextView
                         android:id="@+id/tv_seguidores"
@@ -89,7 +92,7 @@
                         android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -97,15 +100,54 @@
                         android:layout_height="wrap_content"
                         android:text="Seguidores"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
                 </LinearLayout>
 
                 <View
                     android:layout_width="1dp"
                     android:layout_height="match_parent"
+                    android:layout_marginVertical="8dp"
                     android:background="#E0E0E0" />
 
                 <LinearLayout
+                    android:id="@+id/ll_stat_siguiendo"
+                    android:layout_width="0dp"
+                    android:layout_height="wrap_content"
+                    android:layout_weight="1"
+                    android:gravity="center"
+                    android:orientation="vertical"
+                    android:background="?attr/selectableItemBackground"
+                    android:clickable="true">
+
+                    <TextView
+                        android:id="@+id/tv_siguiendo"
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="0"
+                        android:textColor="@color/text_primary"
+                        android:textSize="16sp"
+                        android:textStyle="bold" />
+
+                    <TextView
+                        android:layout_width="wrap_content"
+                        android:layout_height="wrap_content"
+                        android:text="Siguiendo"
+                        android:textColor="@color/text_secondary"
+                        android:textSize="11sp"
+                        android:maxLines="1"
+                        android:ellipsize="end"/>
+                </LinearLayout>
+
+                <View
+                    android:layout_width="1dp"
+                    android:layout_height="match_parent"
+                    android:layout_marginVertical="8dp"
+                    android:background="#E0E0E0" />
+
+                <LinearLayout
+                    android:id="@+id/ll_stat_recetas"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -118,7 +160,7 @@
                         android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -126,15 +168,17 @@
                         android:layout_height="wrap_content"
                         android:text="Recetas"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
                 </LinearLayout>
 
                 <View
                     android:layout_width="1dp"
                     android:layout_height="match_parent"
+                    android:layout_marginVertical="8dp"
                     android:background="#E0E0E0" />
 
                 <LinearLayout
+                    android:id="@+id/ll_stat_favoritos"
                     android:layout_width="0dp"
                     android:layout_height="wrap_content"
                     android:layout_weight="1"
@@ -147,7 +191,7 @@
                         android:layout_height="wrap_content"
                         android:text="0"
                         android:textColor="@color/text_primary"
-                        android:textSize="18sp"
+                        android:textSize="16sp"
                         android:textStyle="bold" />
 
                     <TextView
@@ -155,8 +199,9 @@
                         android:layout_height="wrap_content"
                         android:text="Favoritos"
                         android:textColor="@color/text_secondary"
-                        android:textSize="12sp" />
+                        android:textSize="11sp" />
                 </LinearLayout>
+
             </LinearLayout>
         </androidx.cardview.widget.CardView>
 
@@ -194,12 +239,6 @@
                 android:text="Mis Recetas"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textColor="@color/text_hint"/>
         </LinearLayout>
 
         <LinearLayout
@@ -226,12 +265,6 @@
                 android:text="Recetas Favoritas"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textColor="@color/text_hint"/>
         </LinearLayout>
 
         <LinearLayout
@@ -258,12 +291,6 @@
                 android:text="Mis Reseñas"
                 android:textColor="@color/text_primary"
                 android:textSize="16sp" />
-
-            <TextView
-                android:layout_width="wrap_content"
-                android:layout_height="wrap_content"
-                android:text="0"
-                android:textColor="@color/text_hint"/>
         </LinearLayout>
 
         <TextView

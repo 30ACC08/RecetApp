@@ -18,10 +18,9 @@ class NotificationsFragment : Fragment() {
     private val binding get() = _binding!!
     private val viewModel: AuthViewModel by viewModels()
 
-    // Ahora pasamos la lambda del click
+    // CORRECCIÓN: Pasamos 'notification.id' (String) porque el ViewModel espera un String
     private val adapter = NotificationAdapter { notification ->
-        viewModel.markNotificationAsRead(notification)
-        // Aquí podrías navegar a la receta o perfil relacionado si quisieras
+        viewModel.markNotificationAsRead(notification.id)
     }
 
     override fun onCreateView(inflater: LayoutInflater, container: ViewGroup?, savedInstanceState: Bundle?): View {
@@ -32,18 +31,24 @@ class NotificationsFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
+        // Configurar botón atrás (ID en XML: btn_back -> Binding: btnBack)
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
+        // Configurar RecyclerView (ID en XML: rv_notifications -> Binding: rvNotifications)
         binding.rvNotifications.layoutManager = LinearLayoutManager(context)
         binding.rvNotifications.adapter = adapter
 
+        // Cargar datos
         viewModel.loadNotifications()
 
+        // Observadores
         viewModel.notifications.observe(viewLifecycleOwner) { list ->
             adapter.submitList(list)
+            // ID en XML: ll_empty -> Binding: llEmpty
             binding.llEmpty.visibility = if (list.isEmpty()) View.VISIBLE else View.GONE
         }
 
+        // ID en XML: progress_bar -> Binding: progressBar
         viewModel.isLoading.observe(viewLifecycleOwner) { loading ->
             binding.progressBar.visibility = if (loading) View.VISIBLE else View.GONE
         }

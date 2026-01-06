@@ -10,6 +10,7 @@ import androidx.fragment.app.activityViewModels
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
+import com.example.recetapp.data.model.User
 import com.example.recetapp.databinding.FragmentFavoritosBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.viewmodel.RecipeViewModel
@@ -40,8 +41,11 @@ class FavoritosFragment : Fragment() {
                 viewModel.setSelectedRecipe(recipe)
                 findNavController().navigate(R.id.action_favoritosFragment_to_detalleFragment)
             },
-            onFavoriteClick = { recipe ->
-                viewModel.toggleFavorite(recipe)
+            onFavoriteClick = { recipe -> viewModel.toggleFavorite(recipe) },
+            onUserClick = { userId ->
+                val user = User(id = userId)
+                val bundle = Bundle().apply { putParcelable("user", user) }
+                findNavController().navigate(R.id.action_global_publicProfileFragment, bundle)
             }
         )
         binding.rvFavoritos.layoutManager = LinearLayoutManager(context)

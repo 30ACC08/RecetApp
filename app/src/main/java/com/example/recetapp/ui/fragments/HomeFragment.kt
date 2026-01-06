@@ -11,6 +11,7 @@ import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.example.recetapp.R
 import com.example.recetapp.data.model.Recipe
+import com.example.recetapp.data.model.User
 import com.example.recetapp.databinding.FragmentHomeBinding
 import com.example.recetapp.ui.adapters.RecipeAdapter
 import com.example.recetapp.ui.adapters.RecipeCompactAdapter
@@ -63,6 +64,11 @@ class HomeFragment : Fragment() {
             onFavoriteClick = {
                 viewModel.toggleFavorite(it)
                 Toast.makeText(context, "Actualizando favoritos...", Toast.LENGTH_SHORT).show()
+            },
+            onUserClick = { userId ->
+                val user = User(id = userId)
+                val bundle = Bundle().apply { putParcelable("user", user) }
+                findNavController().navigate(R.id.action_global_publicProfileFragment, bundle)
             }
         )
         binding.rvHealthyRecipes.apply {
@@ -79,7 +85,6 @@ class HomeFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // Observamos UN SOLO estado que controla toda la pantalla
         viewModel.homeState.observe(viewLifecycleOwner) { state ->
             when (state) {
                 is UiState.Loading -> {
