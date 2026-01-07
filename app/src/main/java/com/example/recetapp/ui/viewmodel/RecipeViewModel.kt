@@ -28,7 +28,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     private val translator = RecipeTranslator()
     private var searchJob: Job? = null
 
-    // === ESTADOS UI (Sealed Classes) ===
+    // === ESTADOS UI ===
     private val _homeState = MutableLiveData<UiState<HomeContent>>()
     val homeState: LiveData<UiState<HomeContent>> = _homeState
 
@@ -41,26 +41,26 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     private val _myRecipesState = MutableLiveData<UiState<List<Recipe>>>()
     val myRecipesState: LiveData<UiState<List<Recipe>>> = _myRecipesState
 
-    // Filtros
     private val _currentFilter = MutableLiveData(RecipeFilter())
     val currentFilter: LiveData<RecipeFilter> = _currentFilter
 
-    // Selección, Traducción y Detalles
     private val _selectedRecipe = MutableLiveData<Recipe>()
     val selectedRecipe: LiveData<Recipe> = _selectedRecipe
 
     private val _isRecipeFavorite = MutableLiveData<Boolean?>()
     val isRecipeFavorite: LiveData<Boolean?> = _isRecipeFavorite
 
+    // Cache para traducción
     private var originalRecipeCache: Recipe? = null
     private var translatedRecipeCache: Recipe? = null
+
     private val _isTranslated = MutableLiveData(false)
     val isTranslated: LiveData<Boolean> = _isTranslated
 
     private val _toastMessage = MutableLiveData<String?>()
     val toastMessage: LiveData<String?> = _toastMessage
 
-    // === RESEÑAS / REVIEWS ===
+    // === RESEÑAS ===
     private val _reviews = MutableLiveData<List<Review>>()
     val reviews: LiveData<List<Review>> = _reviews
 
@@ -73,7 +73,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     private val _reviewActionState = MutableLiveData<Result<String>>()
     val reviewActionState: LiveData<Result<String>> = _reviewActionState
 
-    // Perfil Público
     private val _publicUserRecipes = MutableLiveData<List<Recipe>>()
     val publicUserRecipes: LiveData<List<Recipe>> = _publicUserRecipes
     private val _publicUserReviews = MutableLiveData<List<Review>>()
@@ -84,12 +83,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
 
     init {
         viewModelScope.launch {
-            try {
-                translator.prepareModel()
-            } catch (e: Exception) {
-                // Si falla el traductor al inicio, no bloqueamos la app
-                e.printStackTrace()
-            }
+            try { translator.prepareModel() } catch (e: Exception) { e.printStackTrace() }
         }
     }
 
@@ -111,7 +105,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                     _homeState.value = UiState.Success(content)
                 }
             } catch (e: Exception) {
-                _homeState.value = UiState.Error("Error cargando inicio: ${e.message}")
+                _homeState.value = UiState.Error("Tuvimos problemas conectando con la cocina. Revisa tu internet.")
             }
         }
     }
@@ -129,8 +123,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
 
     private suspend fun performSearch(query: String) {
         _searchState.value = UiState.Loading
-
-        // --- TRADUCCIÓN DE BÚSQUEDA ---
         val translatedQuery = try {
             RecipeTranslations.getCategoryKey(query)
                 ?: RecipeTranslations.getAreaKey(query)
@@ -145,7 +137,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                 if (it.isEmpty()) _searchState.value = UiState.Empty
                 else _searchState.value = UiState.Success(it)
             }
-            .onFailure { _searchState.value = UiState.Error(it.message ?: "Error desconocido") }
+            .onFailure { _searchState.value = UiState.Error("No pudimos realizar la búsqueda. Intenta de nuevo.") }
     }
 
     fun applyFilter(f: RecipeFilter) {
@@ -168,13 +160,13 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                     if (it.isEmpty()) _favoritesState.value = UiState.Empty
                     else _favoritesState.value = UiState.Success(it)
                 }
-                .onFailure { _favoritesState.value = UiState.Error(it.message ?: "Error al cargar favoritos") }
+                .onFailure { _favoritesState.value = UiState.Error("No pudimos cargar tus favoritos.") }
         }
     }
 
     fun toggleFavorite(recipe: Recipe) {
         if (FirebaseAuth.getInstance().currentUser == null) {
-            _toastMessage.value = "Debes iniciar sesión para guardar favoritos"
+            _toastMessage.value = "Inicia sesión para guardar tus recetas favoritas."
             return
         }
 
@@ -183,11 +175,11 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             if (isCurrentlyFav) {
                 repository.removeFavorite(recipe.id)
                 _isRecipeFavorite.value = false
-                _toastMessage.value = "Eliminada de favoritos"
+                _toastMessage.value = "Receta eliminada de favoritos."
             } else {
                 repository.addFavorite(recipe)
                 _isRecipeFavorite.value = true
-                _toastMessage.value = "Añadida a favoritos"
+                _toastMessage.value = "¡Receta guardada en favoritos!"
             }
             if (_favoritesState.value is UiState.Success || _favoritesState.value is UiState.Empty) {
                 loadFavorites()
@@ -210,26 +202,22 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                     if (it.isEmpty()) _myRecipesState.value = UiState.Empty
                     else _myRecipesState.value = UiState.Success(it)
                 }
-                .onFailure { _myRecipesState.value = UiState.Error(it.message ?: "Error cargando tus recetas") }
+                .onFailure { _myRecipesState.value = UiState.Error("No pudimos abrir tu recetario personal.") }
         }
     }
 
     fun deleteRecipe(recipeId: String) {
         viewModelScope.launch {
             repository.deleteRecipe(recipeId)
-                .onSuccess { loadMyRecipes() }
+                .onSuccess { loadMyRecipes(); _toastMessage.value = "Receta eliminada correctamente." }
         }
     }
 
-    // === DETALLES Y TRADUCCIÓN ===
+    // === DETALLES ===
     fun setSelectedRecipe(recipe: Recipe) {
         viewModelScope.launch {
             try {
-                // Intentamos formatear, si falla usamos la original
-                val formatted = try {
-                    translator.formatRecipeInstructions(recipe)
-                } catch (e: Exception) { recipe }
-
+                val formatted = try { translator.formatRecipeInstructions(recipe) } catch (e: Exception) { recipe }
                 originalRecipeCache = formatted
                 translatedRecipeCache = null
                 _selectedRecipe.value = formatted
@@ -238,12 +226,10 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                 _reviews.value = emptyList()
                 _reviewUploadResult.value = null
 
-                // Si faltan detalles, intentamos cargarlos, pero manejando errores
                 if (formatted.instructions.isBlank() && formatted.ingredients.isEmpty()) {
                     loadFullRecipeDetails(formatted.id)
                 }
             } catch (e: Exception) {
-                // Si todo falla, mostramos lo que tenemos
                 _selectedRecipe.value = recipe
             }
         }
@@ -260,33 +246,36 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                     _selectedRecipe.value = formatted
                 }
                 .onFailure { e ->
-                    // IMPORTANTE: Si falla la API (ej. cuota alcanzada), avisamos pero NO borramos la receta actual
-                    _toastMessage.value = "No se pudieron cargar detalles completos: ${e.message}"
+                    _toastMessage.value = "Mostrando información básica (Modo sin conexión o límite alcanzado)."
                 }
             _isLoadingAction.value = false
         }
     }
 
+    // === CORRECCIÓN AQUÍ: Traductor Seguro y Limpio ===
     fun toggleTranslation() {
         if (_isTranslated.value == true) {
+            // Volver al original
             originalRecipeCache?.let { _selectedRecipe.value = it }
             _isTranslated.value = false
         } else {
-            if (translatedRecipeCache != null) {
-                _selectedRecipe.value = translatedRecipeCache
+            // Usamos 'let' para acceder de forma segura a la caché si existe
+            translatedRecipeCache?.let { translated ->
+                _selectedRecipe.value = translated
                 _isTranslated.value = true
-            } else {
+            } ?: run {
+                // Si no existe (es null), ejecutamos la traducción
                 _isLoadingAction.value = true
                 viewModelScope.launch {
                     try {
-                        originalRecipeCache?.let {
-                            val trans = translator.translateRecipe(it)
+                        originalRecipeCache?.let { original ->
+                            val trans = translator.translateRecipe(original)
                             translatedRecipeCache = trans
                             _selectedRecipe.value = trans
                             _isTranslated.value = true
                         }
                     } catch (e: Exception) {
-                        _toastMessage.value = "Error al traducir. Verifica tu conexión."
+                        _toastMessage.value = "No pudimos traducir la receta. Verifica tu conexión."
                     }
                     _isLoadingAction.value = false
                 }
@@ -294,12 +283,10 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         }
     }
 
-    // === FUNCIONES DE RESEÑAS ===
+    // === RESEÑAS ===
     fun loadReviews(recipeId: String) {
         viewModelScope.launch {
-            repository.getReviews(recipeId).onSuccess { list ->
-                _reviews.value = list
-            }
+            repository.getReviews(recipeId).onSuccess { list -> _reviews.value = list }
         }
     }
 
@@ -328,6 +315,8 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
                 val currentList = _reviews.value.orEmpty().toMutableList()
                 currentList.add(0, newReview)
                 _reviews.value = currentList
+            } else {
+                _toastMessage.value = "No pudimos publicar tu reseña."
             }
             _isLoadingAction.value = false
         }
@@ -336,12 +325,7 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     fun loadUserReviews() {
         _isLoadingAction.value = true
         viewModelScope.launch {
-            repository.getUserReviews().onSuccess {
-                _userReviews.value = it
-            }.onFailure { e ->
-                _userReviews.value = emptyList()
-                _reviewActionState.value = Result.failure(e)
-            }
+            repository.getUserReviews().onSuccess { _userReviews.value = it }
             _isLoadingAction.value = false
         }
     }
@@ -352,8 +336,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             repository.deleteReview(review.recipeId, review.id).onSuccess {
                 _reviewActionState.value = Result.success("Reseña eliminada")
                 loadUserReviews()
-            }.onFailure {
-                _reviewActionState.value = Result.failure(it)
             }
             _isLoadingAction.value = false
         }
@@ -365,8 +347,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             repository.updateReview(review.recipeId, review.id, newRating, newComment).onSuccess {
                 _reviewActionState.value = Result.success("Reseña actualizada")
                 loadUserReviews()
-            }.onFailure {
-                _reviewActionState.value = Result.failure(it)
             }
             _isLoadingAction.value = false
         }

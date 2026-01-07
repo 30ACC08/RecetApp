@@ -104,6 +104,7 @@ class AdminFragment : Fragment() {
 
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Editar Usuario")
+            .setIcon(R.drawable.ic_logo_app)
             .setView(view)
             .setPositiveButton("Guardar") { _, _ ->
                 val nuevoNombre = etNombre.text.toString().trim()
@@ -118,6 +119,7 @@ class AdminFragment : Fragment() {
     private fun showDeleteConfirmation(user: User) {
         MaterialAlertDialogBuilder(requireContext())
             .setTitle("Eliminar Usuario")
+            .setIcon(R.drawable.ic_logo_app)
             .setMessage("¿Estás seguro de eliminar a ${user.nombre}?\nEsta acción es irreversible.")
             .setPositiveButton("Eliminar") { _, _ ->
                 viewModel.deleteUser(user.id, user.email)

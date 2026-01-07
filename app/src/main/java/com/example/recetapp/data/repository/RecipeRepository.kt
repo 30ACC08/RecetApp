@@ -25,16 +25,17 @@ class RecipeRepository {
     private val auth = FirebaseAuth.getInstance()
     private val storage = FirebaseStorage.getInstance()
 
-    // === Helper ===
+    // === HELPER: OBTENER NOMBRE ===
     suspend fun getCurrentUserName(): String = withContext(Dispatchers.IO) {
-        val uid = auth.currentUser?.uid ?: return@withContext "Anónimo"
+        val uid = auth.currentUser?.uid ?: return@withContext "Usuario de RecetApp"
         try {
             val doc = firestore.collection("usuarios").document(uid).get().await()
-            doc.getString("nombre") ?: "Anónimo"
-        } catch (e: Exception) { "Anónimo" }
+            doc.getString("nombre") ?: "Usuario de RecetApp"
+        } catch (e: Exception) { "Usuario de RecetApp" }
     }
 
-    // === CRUD Recetas ===
+    // === CRUD RECETAS (CREAR, SUBIR IMAGEN, ETC) ===
+
     suspend fun uploadImage(imageUri: Uri): Result<String> = withContext(Dispatchers.IO) {
         try {
             val filename = UUID.randomUUID().toString()
@@ -86,7 +87,7 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // === BUSCAR RECETA POR ID (BLINDADO) ===
+    // === BUSCAR RECETA POR ID (BLINDADO CONTRA ERRORES API) ===
     suspend fun getRecipeById(id: String): Result<Recipe> = withContext(Dispatchers.IO) {
         try {
             when {
@@ -97,25 +98,23 @@ class RecipeRepository {
                         if (response.isSuccessful && response.body() != null) {
                             Result.success(response.body()!!.toRecipe())
                         } else {
-                            // Aquí detectamos si la cuota se acabó (Error 402)
-                            val errorMsg = if (response.code() == 402) "Límite de API Spoonacular alcanzado" else "Error API: ${response.code()}"
+                            val errorMsg = if (response.code() == 402) "Servidor ocupado (Límite alcanzado)" else "Error del servidor: ${response.code()}"
                             Result.failure(Exception(errorMsg))
                         }
                     } catch (e: Exception) {
-                        Result.failure(Exception("Error de conexión con Spoonacular"))
+                        Result.failure(Exception("Error de conexión. Verifica tu internet."))
                     }
                 }
                 id.all { it.isDigit() } -> {
                     try {
                         val response = mealDbApi.getRecipeById(id)
                         val meal = response.body()?.meals?.firstOrNull()
-                        if (meal != null) Result.success(meal.toRecipe()) else Result.failure(Exception("Receta no encontrada en MealDB"))
+                        if (meal != null) Result.success(meal.toRecipe()) else Result.failure(Exception("Receta no encontrada."))
                     } catch (e: Exception) {
-                        Result.failure(Exception("Error de conexión con MealDB"))
+                        Result.failure(Exception("Error de conexión con la base de datos."))
                     }
                 }
                 else -> {
-                    // Lógica Firestore con protección extra contra datos corruptos
                     try {
                         val snapshot = firestore.collectionGroup("mis_recetas")
                             .whereEqualTo(FieldPath.documentId(), id)
@@ -125,15 +124,14 @@ class RecipeRepository {
                             ?: firestore.collectionGroup("mis_recetas").whereEqualTo("id", id).get().await().documents.firstOrNull()
 
                         if (doc != null) {
-                            // Usamos try-catch interno por si el objeto JSON no coincide con la clase Recipe
                             try {
                                 val recipe = doc.toObject(Recipe::class.java)
-                                if (recipe != null) Result.success(recipe) else Result.failure(Exception("Error al leer datos de la receta"))
+                                if (recipe != null) Result.success(recipe) else Result.failure(Exception("Error al leer datos."))
                             } catch (e: Exception) {
-                                Result.failure(Exception("Formato de receta inválido en base de datos"))
+                                Result.failure(Exception("Formato de receta inválido."))
                             }
                         } else {
-                            Result.failure(Exception("Receta no encontrada"))
+                            Result.failure(Exception("Receta no encontrada."))
                         }
                     } catch (e: Exception) {
                         Result.failure(e)
@@ -148,6 +146,7 @@ class RecipeRepository {
         try {
             val recipes = mutableListOf<Recipe>()
             coroutineScope {
+                // 1. Firestore
                 val firestoreDeferred = async {
                     try {
                         val query = firestore.collectionGroup("mis_recetas")
@@ -161,6 +160,7 @@ class RecipeRepository {
                     } catch (e: Exception) { emptyList<Recipe>() }
                 }
 
+                // 2. MealDB
                 val mealDbDeferred = async {
                     if (filter.source != RecipeSource.SPOONACULAR) {
                         val list = mutableListOf<Recipe>()
@@ -179,6 +179,7 @@ class RecipeRepository {
                     } else emptyList()
                 }
 
+                // 3. Spoonacular
                 val spoonDeferred = async {
                     if (filter.source != RecipeSource.THEMEALDB) {
                         try {
@@ -191,7 +192,7 @@ class RecipeRepository {
                             ).body()?.results?.toRecipeList() ?: emptyList()
                         } catch (e: Exception) {
                             Log.e("Repo", "Spoonacular Error", e)
-                            emptyList<Recipe>() // Retornar lista vacía si falla la API
+                            emptyList<Recipe>()
                         }
                     } else emptyList()
                 }
@@ -204,7 +205,8 @@ class RecipeRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // === FAVORITOS & LIKES ===
+    // === FAVORITOS & LIKES (CON NOTIFICACIONES AMIGABLES) ===
+
     suspend fun isFavorite(recipeId: String): Boolean = withContext(Dispatchers.IO) {
         val userId = auth.currentUser?.uid ?: return@withContext false
         try {
@@ -218,7 +220,14 @@ class RecipeRepository {
         try {
             firestore.collection("usuarios").document(userId).collection("favoritos").document(recipe.id).set(recipe).await()
             if (recipe.userId.isNotEmpty() && recipe.userId != userId) {
-                sendNotification(recipe.userId, NotificationType.LIKE, "¡Nuevo Like!", "A alguien le gustó tu receta ${recipe.name}", recipe.id)
+                // Notificación Amigable
+                sendNotification(
+                    targetUserId = recipe.userId,
+                    type = NotificationType.LIKE,
+                    title = "¡Tienes un nuevo fan!",
+                    message = "A alguien le ha encantado tu receta: ${recipe.name}",
+                    relatedId = recipe.id
+                )
             }
         } catch (e: Exception) { e.printStackTrace() }
     }
@@ -265,12 +274,13 @@ class RecipeRepository {
         } catch(e:Exception) { Result.failure(e) }
     }
 
-    // ==================== RESEÑAS / REVIEWS ====================
+    // === RESEÑAS / REVIEWS (CON NOTIFICACIONES AMIGABLES) ===
+
     suspend fun addReview(recipeId: String, recipeName: String, recipeImageUrl: String, rating: Float, comment: String): Result<Boolean> = withContext(Dispatchers.IO) {
         try {
             val user = auth.currentUser ?: return@withContext Result.failure(Exception("Debes iniciar sesión"))
             val userDoc = firestore.collection("usuarios").document(user.uid).get().await()
-            val userName = userDoc.getString("nombre") ?: "Anónimo"
+            val userName = userDoc.getString("nombre") ?: "Un usuario"
             val userPhoto = userDoc.getString("photoUrl") ?: ""
 
             val reviewId = UUID.randomUUID().toString()
@@ -285,7 +295,14 @@ class RecipeRepository {
                 val ownerId = recipeDocs.documents.firstOrNull()?.getString("userId")
 
                 if (ownerId != null) {
-                    sendNotification(ownerId, NotificationType.REVIEW, "Nueva reseña", "$userName comentó en $recipeName: \"$comment\"", recipeId)
+                    // Notificación Amigable
+                    sendNotification(
+                        targetUserId = ownerId,
+                        type = NotificationType.REVIEW,
+                        title = "Nueva opinión recibida",
+                        message = "$userName comentó sobre ${recipeName}: \"$comment\"",
+                        relatedId = recipeId
+                    )
                 }
             } catch (e: Exception) { /* Ignorar error de notificación */ }
 
@@ -333,6 +350,7 @@ class RecipeRepository {
         } catch (e: Exception) { Result.success(emptyList()) }
     }
 
+    // === HELPER PRIVADO PARA NOTIFICACIONES ===
     private suspend fun sendNotification(targetUserId: String, type: NotificationType, title: String, message: String, relatedId: String) {
         try {
             val currentUser = auth.currentUser ?: return

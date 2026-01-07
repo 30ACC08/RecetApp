@@ -223,6 +223,7 @@ class DetalleFragment : Fragment() {
 
             MaterialAlertDialogBuilder(requireContext())
                 .setTitle("Calificar")
+                .setIcon(R.drawable.ic_logo_app)
                 .setView(view)
                 .setPositiveButton("Enviar") { _, _ ->
                     val id = viewModel.selectedRecipe.value?.id ?: return@setPositiveButton
