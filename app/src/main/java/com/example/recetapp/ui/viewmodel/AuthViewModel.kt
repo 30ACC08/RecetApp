@@ -17,7 +17,7 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val authRepository = FirebaseAuthRepository()
     private val auth = FirebaseAuth.getInstance()
 
-    // Estados de UI
+    // === ESTADOS DE AUTENTICACIÓN ===
     private val _loginResult = MutableLiveData<Result<User>>()
     val loginResult: LiveData<Result<User>> = _loginResult
 
@@ -27,29 +27,30 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _resetPasswordResult = MutableLiveData<Result<Boolean>>()
     val resetPasswordResult: LiveData<Result<Boolean>> = _resetPasswordResult
 
-    private val _validationError = MutableLiveData<String>()
-    val validationError: LiveData<String> = _validationError
-
-    private val _generalError = MutableLiveData<String>()
-    val generalError: LiveData<String> = _generalError
-
-    private val _isLoading = MutableLiveData<Boolean>()
-    val isLoading: LiveData<Boolean> = _isLoading
-
     private val _currentUser = MutableLiveData<User?>()
     val currentUser: LiveData<User?> = _currentUser
 
     private val _updateResult = MutableLiveData<Result<User>>()
     val updateResult: LiveData<Result<User>> = _updateResult
 
-    // Admin
+    // === ESTADOS COMUNES (Errores y Carga) ===
+    private val _validationError = MutableLiveData<String>()
+    val validationError: LiveData<String> = _validationError
+
+    private val _generalError = MutableLiveData<String?>() // ¡Recuperado!
+    val generalError: LiveData<String?> = _generalError
+
+    private val _isLoading = MutableLiveData<Boolean>()
+    val isLoading: LiveData<Boolean> = _isLoading
+
+    // === ESTADOS DE ADMINISTRADOR ===
     private val _allUsers = MutableLiveData<List<User>>()
     val allUsers: LiveData<List<User>> = _allUsers
 
     private val _deleteResult = MutableLiveData<Result<Boolean>>()
     val deleteResult: LiveData<Result<Boolean>> = _deleteResult
 
-    // Social
+    // === ESTADOS SOCIALES (Perfil y Seguidores) ===
     private val _userStats = MutableLiveData<Pair<Int, Int>>()
     val userStats: LiveData<Pair<Int, Int>> = _userStats
 
@@ -62,11 +63,16 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _notifications = MutableLiveData<List<Notification>>()
     val notifications: LiveData<List<Notification>> = _notifications
 
+
     init {
-        loadCurrentUser()
+        // Al iniciar, si hay sesión, cargamos datos
+        if (auth.currentUser != null) {
+            loadCurrentUser()
+        }
     }
 
-    // Login
+    // ================= FUNCIONES DE LOGIN / REGISTRO =================
+
     fun login(email: String, pass: String, rememberMe: Boolean) {
         if (email.isBlank() || pass.isBlank()) {
             _validationError.value = "Completa todos los campos"
@@ -75,13 +81,17 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _isLoading.value = true
         viewModelScope.launch {
             val result = authRepository.loginUser(email, pass)
-            _loginResult.value = result
-            if (result.isSuccess) loadCurrentUser()
+            if (result.isSuccess) {
+                _currentUser.value = result.getOrNull()
+                loadUserStats() // Cargar stats al entrar
+                _loginResult.value = result
+            } else {
+                _loginResult.value = result
+            }
             _isLoading.value = false
         }
     }
 
-    // Registro
     fun register(nombre: String, email: String, pass: String, confirmar: String) {
         if (nombre.isBlank() || email.isBlank() || pass.isBlank()) {
             _validationError.value = "Completa todos los campos"
@@ -98,8 +108,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         _isLoading.value = true
         viewModelScope.launch {
             val result = authRepository.registerUser(nombre, email, pass)
+            if (result.isSuccess) {
+                _currentUser.value = result.getOrNull()
+            }
             _registerResult.value = result
-            if (result.isSuccess) loadCurrentUser()
             _isLoading.value = false
         }
     }
@@ -109,10 +121,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
             _validationError.value = "Ingresa tu correo"
             return
         }
-        _isLoading.value = true
         viewModelScope.launch {
             _resetPasswordResult.value = authRepository.sendPasswordResetEmail(email)
-            _isLoading.value = false
         }
     }
 
@@ -123,54 +133,78 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadCurrentUser() {
         viewModelScope.launch {
-            _currentUser.value = authRepository.getCurrentUser()
-            loadUserStats()
+            val user = authRepository.getCurrentUser()
+            _currentUser.value = user
+            if (user != null) loadUserStats()
         }
     }
 
-    // Perfil
+    // Actualizar Perfil Propio (Con foto)
     fun updateUserProfile(userId: String, nombre: String, imageUri: Uri?) {
         _isLoading.value = true
         viewModelScope.launch {
             var photoUrl: String? = null
             if (imageUri != null) {
                 val uploadRes = authRepository.uploadProfileImage(imageUri)
-                if (uploadRes.isSuccess) photoUrl = uploadRes.getOrNull()
+                photoUrl = uploadRes.getOrNull()
             }
+            // Si no hay foto nueva, pasamos null para que el repo mantenga la anterior o la maneje
             val result = authRepository.updateUser(userId, nombre, photoUrl)
             _updateResult.value = result
-            loadCurrentUser()
+            if (result.isSuccess) {
+                // Actualizamos el usuario en memoria
+                _currentUser.value = result.getOrNull()
+            }
             _isLoading.value = false
         }
     }
 
-    // Admin
+    // ================= FUNCIONES DE ADMINISTRADOR =================
+
     fun loadAllUsers() {
         _isLoading.value = true
         viewModelScope.launch {
-            authRepository.getAllUsers().onSuccess { _allUsers.value = it }
+            authRepository.getAllUsers()
+                .onSuccess { _allUsers.value = it }
+                .onFailure { _generalError.value = "Error cargando usuarios: ${it.message}" }
             _isLoading.value = false
         }
     }
 
+    // Función que faltaba para el AdminFragment (Solo actualizar nombre)
     fun updateUser(userId: String, newNombre: String) {
+        if (newNombre.isBlank()) return
+        _isLoading.value = true
         viewModelScope.launch {
-            authRepository.updateUser(userId, newNombre, null).onSuccess { loadAllUsers() }
+            // Reutilizamos la función del repositorio, pasando null en la foto para no cambiarla
+            val result = authRepository.updateUser(userId, newNombre, null)
+
+            if (result.isSuccess) {
+                loadAllUsers() // Recargar la lista para ver el cambio
+                _generalError.value = "Usuario actualizado correctamente" // Usamos generalError para mensajes rápidos o Toast
+            } else {
+                _generalError.value = "Error al actualizar: ${result.exceptionOrNull()?.message}"
+            }
+            _isLoading.value = false
         }
     }
 
     fun deleteUser(userId: String, email: String) {
         _isLoading.value = true
         viewModelScope.launch {
-            authRepository.deleteUser(userId, email).onSuccess {
-                _deleteResult.value = Result.success(true)
-                loadAllUsers()
+            val result = authRepository.deleteUser(userId, email)
+            _deleteResult.value = result
+            if (result.isSuccess) {
+                loadAllUsers() // Recargar lista
+            } else {
+                _generalError.value = "Error al eliminar: ${result.exceptionOrNull()?.message}"
             }
             _isLoading.value = false
         }
     }
 
-    // Social
+    // ================= FUNCIONES SOCIALES =================
+
     fun loadUserStats() {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
@@ -181,7 +215,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     fun toggleFollow(targetUserId: String) {
         val uid = auth.currentUser?.uid ?: return
         if (uid == targetUserId) return
+
         viewModelScope.launch {
+            // Optimista: Cambiamos estado visualmente antes de confirmar (opcional)
+            // Aquí hacemos la lógica real:
             if (authRepository.isFollowing(uid, targetUserId)) {
                 authRepository.unfollowUser(uid, targetUserId)
                 _isFollowing.value = false
@@ -189,8 +226,9 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 authRepository.followUser(uid, targetUserId)
                 _isFollowing.value = true
             }
-            loadUserStats()
+            // Actualizar datos
             checkIfFollowing(targetUserId)
+            loadUserStats()
         }
     }
 
@@ -203,10 +241,8 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
 
     fun loadFollowingList() {
         val uid = auth.currentUser?.uid ?: return
-        _isLoading.value = true
         viewModelScope.launch {
             authRepository.getFollowingUsers(uid).onSuccess { _followingList.value = it }
-            _isLoading.value = false
         }
     }
 
@@ -217,10 +253,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         }
     }
 
-    fun markNotificationAsRead(notificationId: String) {
+    fun markNotificationAsRead(notifId: String) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
-            authRepository.markNotificationAsRead(uid, notificationId)
+            authRepository.markNotificationAsRead(uid, notifId)
             loadNotifications()
         }
     }

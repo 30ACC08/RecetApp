@@ -12,7 +12,6 @@ import android.widget.Toast
 import androidx.fragment.app.Fragment
 import androidx.fragment.app.activityViewModels
 import androidx.fragment.app.viewModels
-import androidx.lifecycle.lifecycleScope
 import androidx.navigation.fragment.findNavController
 import androidx.recyclerview.widget.LinearLayoutManager
 import com.bumptech.glide.Glide
@@ -32,10 +31,7 @@ class DetalleFragment : Fragment() {
     private var _binding: FragmentDetalleBinding? = null
     private val binding get() = _binding!!
 
-    // ViewModel compartido para datos de la receta
     private val viewModel: RecipeViewModel by activityViewModels()
-
-    // ViewModel propio del fragmento para acciones de usuario (seguir)
     private val authViewModel: AuthViewModel by viewModels()
 
     private lateinit var reviewsAdapter: ReviewAdapter
@@ -65,10 +61,10 @@ class DetalleFragment : Fragment() {
 
         binding.btnTranslate.setOnClickListener { viewModel.toggleTranslation() }
 
-        // Botón Seguir: verifica que authViewModel tenga la función toggleFollow
         binding.btnFollow.setOnClickListener {
             val recipe = viewModel.selectedRecipe.value
-            if (recipe != null && recipe.userId.isNotBlank()) {
+            // Validación extra para evitar NullPointer si userId es nulo
+            if (recipe != null && !recipe.userId.isNullOrBlank()) {
                 authViewModel.toggleFollow(recipe.userId)
             }
         }
@@ -79,10 +75,10 @@ class DetalleFragment : Fragment() {
                 try {
                     startActivity(Intent(Intent.ACTION_VIEW, Uri.parse(url)))
                 } catch (e: Exception) {
-                    Toast.makeText(requireContext(), "Error al abrir video", Toast.LENGTH_SHORT).show()
+                    Toast.makeText(requireContext(), "Error al abrir video o no hay app compatible", Toast.LENGTH_SHORT).show()
                 }
             } else {
-                Toast.makeText(requireContext(), "No hay video", Toast.LENGTH_SHORT).show()
+                Toast.makeText(requireContext(), "No hay video disponible", Toast.LENGTH_SHORT).show()
             }
         }
 
@@ -99,30 +95,38 @@ class DetalleFragment : Fragment() {
     }
 
     private fun setupObservers() {
-        // Datos de receta
         viewModel.selectedRecipe.observe(viewLifecycleOwner) { recipe ->
             if (recipe != null) {
-                bindRecipeData(recipe)
-                viewModel.loadReviews(recipe.id)
-                viewModel.checkIfFavorite(recipe.id)
+                try {
+                    bindRecipeData(recipe)
+                    viewModel.loadReviews(recipe.id)
+                    viewModel.checkIfFavorite(recipe.id)
+                } catch (e: Exception) {
+                    // Si falla el pintado, evitamos cierre forzoso
+                    e.printStackTrace()
+                    Toast.makeText(context, "Error visualizando receta", Toast.LENGTH_SHORT).show()
+                }
             }
         }
 
-        // Estado "Seguiendo" (debe venir de AuthViewModel actualizado)
         authViewModel.isFollowing.observe(viewLifecycleOwner) { isFollowing ->
             if (isFollowing) {
                 binding.btnFollow.text = "Siguiendo"
                 binding.btnFollow.setBackgroundColor(Color.GRAY)
             } else {
                 binding.btnFollow.text = "Seguir"
-                binding.btnFollow.setBackgroundColor(requireContext().getColor(R.color.orange_primary))
+                // Verificar que el contexto siga vivo
+                context?.let {
+                    binding.btnFollow.setBackgroundColor(it.getColor(R.color.orange_primary))
+                }
             }
         }
 
         viewModel.isRecipeFavorite.observe(viewLifecycleOwner) { isFav ->
             binding.fabFavorite.isEnabled = true
-            val icon = if (isFav == true) R.drawable.ic_favorite else android.R.drawable.star_big_off
-            binding.fabFavorite.setImageResource(icon)
+            val icon = if (isFav == true) R.drawable.ic_favorite else R.drawable.ic_favorite_border
+            // Usamos ic_favorite_border en lugar de android.R.drawable.star_big_off si lo tienes, o el que tengas
+            try { binding.fabFavorite.setImageResource(icon) } catch (e: Exception) { /* ignore */ }
         }
 
         viewModel.toastMessage.observe(viewLifecycleOwner) { msg ->
@@ -150,64 +154,85 @@ class DetalleFragment : Fragment() {
         viewModel.reviewUploadResult.observe(viewLifecycleOwner) { result ->
             result?.onSuccess {
                 Toast.makeText(requireContext(), "¡Reseña publicada!", Toast.LENGTH_SHORT).show()
-                // Recargar reseñas
                 viewModel.selectedRecipe.value?.id?.let { id -> viewModel.loadReviews(id) }
             }
         }
     }
 
     private fun bindRecipeData(recipe: Recipe) {
-        Glide.with(this)
-            .load(recipe.imageUrl)
-            .placeholder(android.R.drawable.ic_menu_gallery)
-            .into(binding.ivRecipe)
+        // Uso seguro de Glide
+        try {
+            Glide.with(this)
+                .load(recipe.imageUrl.takeIf { !it.isNullOrBlank() })
+                .placeholder(R.drawable.ic_launcher_background) // Asegúrate de tener un placeholder válido
+                .error(android.R.drawable.ic_menu_report_image)
+                .into(binding.ivRecipe)
+        } catch (e: Exception) { /* Ignorar error de carga de imagen */ }
 
-        binding.collapsingToolbar.title = recipe.name
-        binding.tvName.text = recipe.name
-        binding.tvCategory.text = "${RecipeTranslations.categoryName(recipe.category)} • ${RecipeTranslations.areaName(recipe.area)}"
+        binding.collapsingToolbar.title = recipe.name ?: "Sin Nombre"
+        binding.tvName.text = recipe.name ?: "Sin Nombre"
+
+        // Protección contra nulls en RecipeTranslations
+        val catName = RecipeTranslations.categoryName(recipe.category ?: "")
+        val areaName = RecipeTranslations.areaName(recipe.area ?: "")
+        binding.tvCategory.text = "$catName • $areaName"
+
         binding.tvTime.text = "${recipe.readyInMinutes ?: "?"} min"
 
-        // Lógica de visualización del creador
         val currentUserId = FirebaseAuth.getInstance().currentUser?.uid
-        if (recipe.source == RecipeSource.USER && recipe.userId.isNotBlank() && recipe.userId != currentUserId) {
-            binding.llCreatorSection.visibility = View.VISIBLE
-            binding.tvCreatorName.text = if (recipe.creatorName.isNotBlank()) recipe.creatorName else "Usuario"
 
-            // Verificar si ya lo sigo (Esto requiere AuthViewModel actualizado)
+        // Verificar source y userId con seguridad
+        val isUserRecipe = recipe.source == RecipeSource.USER
+        val hasCreator = !recipe.userId.isNullOrBlank()
+        val isNotMe = recipe.userId != currentUserId
+
+        if (isUserRecipe && hasCreator && isNotMe) {
+            binding.llCreatorSection.visibility = View.VISIBLE
+            binding.tvCreatorName.text = if (!recipe.creatorName.isNullOrBlank()) recipe.creatorName else "Usuario"
             authViewModel.checkIfFollowing(recipe.userId)
         } else {
             binding.llCreatorSection.visibility = View.GONE
         }
 
         val ingText = StringBuilder()
-        recipe.ingredients.forEach {
-            if (it.name.isNotBlank()) {
-                ingText.append("• ${it.name} (${it.measure})\n")
+        recipe.ingredients?.forEach {
+            if (!it.name.isNullOrBlank()) {
+                ingText.append("• ${it.name} (${it.measure ?: ""})\n")
             }
         }
         binding.tvIngredients.text = ingText.toString().ifBlank { "Sin ingredientes" }
 
-        val cleanInstructions = recipe.instructions.ifBlank { "Sin instrucciones" }
+        val instructions = recipe.instructions ?: ""
+        val cleanInstructions = instructions.ifBlank { "Sin instrucciones detalladas." }
             .replace("\r\n", "<br>").replace("\n", "<br>")
 
-        binding.tvInstructions.text = Html.fromHtml(cleanInstructions, Html.FROM_HTML_MODE_COMPACT)
+        try {
+            binding.tvInstructions.text = Html.fromHtml(cleanInstructions, Html.FROM_HTML_MODE_COMPACT)
+        } catch (e: Exception) {
+            binding.tvInstructions.text = cleanInstructions // Fallback a texto plano si falla HTML
+        }
+
         binding.btnVideo.visibility = if (recipe.videoUrl.isNullOrBlank()) View.GONE else View.VISIBLE
     }
 
     private fun showAddReviewDialog() {
-        val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_review, null)
-        val ratingBar = view.findViewById<android.widget.RatingBar>(R.id.rating_bar)
-        val etComment = view.findViewById<android.widget.EditText>(R.id.et_comment)
+        try {
+            val view = LayoutInflater.from(context).inflate(R.layout.dialog_add_review, null)
+            val ratingBar = view.findViewById<android.widget.RatingBar>(R.id.rating_bar)
+            val etComment = view.findViewById<android.widget.EditText>(R.id.et_comment)
 
-        MaterialAlertDialogBuilder(requireContext())
-            .setTitle("Calificar")
-            .setView(view)
-            .setPositiveButton("Enviar") { _, _ ->
-                val id = viewModel.selectedRecipe.value?.id ?: return@setPositiveButton
-                viewModel.submitReview(id, ratingBar.rating, etComment.text.toString())
-            }
-            .setNegativeButton("Cancelar", null)
-            .show()
+            MaterialAlertDialogBuilder(requireContext())
+                .setTitle("Calificar")
+                .setView(view)
+                .setPositiveButton("Enviar") { _, _ ->
+                    val id = viewModel.selectedRecipe.value?.id ?: return@setPositiveButton
+                    viewModel.submitReview(id, ratingBar.rating, etComment.text.toString())
+                }
+                .setNegativeButton("Cancelar", null)
+                .show()
+        } catch (e: Exception) {
+            Toast.makeText(context, "Error al abrir diálogo", Toast.LENGTH_SHORT).show()
+        }
     }
 
     override fun onDestroyView() {

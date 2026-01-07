@@ -6,8 +6,8 @@ import kotlinx.parcelize.Parcelize
 @Parcelize
 data class Recipe(
     val id: String = "",
-    val userId: String = "",
-    val creatorName: String = "",
+    val userId: String = "",        // <--- IMPORTANTE
+    val creatorName: String = "",   // <--- IMPORTANTE
     val name: String = "",
     val category: String = "",
     val area: String = "",
@@ -17,7 +17,7 @@ data class Recipe(
     val tags: List<String> = emptyList(),
     val ingredients: List<Ingredient> = emptyList(),
     val videoUrl: String? = null,
-    val source: RecipeSource = RecipeSource.THEMEALDB,
+    val source: RecipeSource = RecipeSource.THEMEALDB, // <--- IMPORTANTE
 
     val readyInMinutes: Int? = null,
     val servings: Int? = null,
@@ -31,7 +31,7 @@ data class Recipe(
     val veryHealthy: Boolean = false,
     val sustainable: Boolean = false,
     val nutrition: Nutrition? = null,
-    val likesCount: Int = 0 // <--- NUEVO: Contador de likes
+    val likesCount: Int = 0        // <--- IMPORTANTE
 ) : Parcelable
 
 @Parcelize
@@ -50,6 +50,7 @@ data class Nutrition(
 
 enum class RecipeSource { THEMEALDB, SPOONACULAR, USER }
 
+// ... El resto de tus clases Filter y Translations ...
 data class RecipeFilter(
     val query: String = "",
     val category: String? = null,
@@ -73,19 +74,18 @@ object RecipeTranslations {
         "Breakfast" to "Desayuno", "Dessert" to "Postres", "Seafood" to "Mariscos",
         "Vegetarian" to "Vegetariano", "Beef" to "Res", "Chicken" to "Pollo",
         "Pasta" to "Pasta", "Pork" to "Cerdo", "Lamb" to "Cordero",
-        "Starter" to "Entradas", "Vegan" to "Vegano", "Side" to "Guarnición"
+        "Starter" to "Entradas", "Vegan" to "Vegano", "Side" to "Guarnición",
+        "Miscellaneous" to "Miscelánea", "Goat" to "Cabra"
     )
     val AREAS = mapOf(
         "Mexican" to "Mexicana", "Italian" to "Italiana", "American" to "Americana",
         "British" to "Británica", "French" to "Francesa", "Chinese" to "China",
-        "Japanese" to "Japonesa", "Indian" to "India", "Spanish" to "Española"
+        "Japanese" to "Japonesa", "Indian" to "India", "Spanish" to "Española",
+        "Greek" to "Griega", "Thai" to "Tailandesa"
     )
     fun categoryName(original: String): String = CATEGORIES[original] ?: original
     fun areaName(original: String): String = AREAS[original] ?: original
 
-    // Funciones para búsqueda inversa (Español -> Inglés)
     fun getCategoryKey(spanish: String): String? = CATEGORIES.entries.find { it.value.equals(spanish, ignoreCase = true) }?.key
     fun getAreaKey(spanish: String): String? = AREAS.entries.find { it.value.equals(spanish, ignoreCase = true) }?.key
 }
-object RecipeCategories { val ALL = RecipeTranslations.CATEGORIES.keys.toList() }
-object RecipeAreas { val ALL = RecipeTranslations.AREAS.keys.toList() }

@@ -83,7 +83,14 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     val isLoadingAction: LiveData<Boolean> = _isLoadingAction
 
     init {
-        viewModelScope.launch { translator.prepareModel() }
+        viewModelScope.launch {
+            try {
+                translator.prepareModel()
+            } catch (e: Exception) {
+                // Si falla el traductor al inicio, no bloqueamos la app
+                e.printStackTrace()
+            }
+        }
     }
 
     // === HOME ===
@@ -124,10 +131,11 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
         _searchState.value = UiState.Loading
 
         // --- TRADUCCIÓN DE BÚSQUEDA ---
-        // Intentamos traducir la query del español al inglés si coincide con una categoría o área
-        val translatedQuery = RecipeTranslations.getCategoryKey(query)
-            ?: RecipeTranslations.getAreaKey(query)
-            ?: query
+        val translatedQuery = try {
+            RecipeTranslations.getCategoryKey(query)
+                ?: RecipeTranslations.getAreaKey(query)
+                ?: query
+        } catch (e: Exception) { query }
 
         val filter = _currentFilter.value?.copy(query = translatedQuery) ?: RecipeFilter(query = translatedQuery)
         _currentFilter.value = filter
@@ -216,17 +224,27 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     // === DETALLES Y TRADUCCIÓN ===
     fun setSelectedRecipe(recipe: Recipe) {
         viewModelScope.launch {
-            val formatted = translator.formatRecipeInstructions(recipe)
-            originalRecipeCache = formatted
-            translatedRecipeCache = null
-            _selectedRecipe.value = formatted
-            _isTranslated.value = false
-            _isRecipeFavorite.value = null
-            _reviews.value = emptyList()
-            _reviewUploadResult.value = null
+            try {
+                // Intentamos formatear, si falla usamos la original
+                val formatted = try {
+                    translator.formatRecipeInstructions(recipe)
+                } catch (e: Exception) { recipe }
 
-            if (formatted.instructions.isBlank() && formatted.ingredients.isEmpty()) {
-                loadFullRecipeDetails(formatted.id)
+                originalRecipeCache = formatted
+                translatedRecipeCache = null
+                _selectedRecipe.value = formatted
+                _isTranslated.value = false
+                _isRecipeFavorite.value = null
+                _reviews.value = emptyList()
+                _reviewUploadResult.value = null
+
+                // Si faltan detalles, intentamos cargarlos, pero manejando errores
+                if (formatted.instructions.isBlank() && formatted.ingredients.isEmpty()) {
+                    loadFullRecipeDetails(formatted.id)
+                }
+            } catch (e: Exception) {
+                // Si todo falla, mostramos lo que tenemos
+                _selectedRecipe.value = recipe
             }
         }
     }
@@ -234,12 +252,17 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
     fun loadFullRecipeDetails(recipeId: String) {
         _isLoadingAction.value = true
         viewModelScope.launch {
-            repository.getRecipeById(recipeId).onSuccess { recipe ->
-                val formatted = translator.formatRecipeInstructions(recipe)
-                originalRecipeCache = formatted
-                translatedRecipeCache = null
-                _selectedRecipe.value = formatted
-            }
+            repository.getRecipeById(recipeId)
+                .onSuccess { recipe ->
+                    val formatted = try { translator.formatRecipeInstructions(recipe) } catch(e:Exception) { recipe }
+                    originalRecipeCache = formatted
+                    translatedRecipeCache = null
+                    _selectedRecipe.value = formatted
+                }
+                .onFailure { e ->
+                    // IMPORTANTE: Si falla la API (ej. cuota alcanzada), avisamos pero NO borramos la receta actual
+                    _toastMessage.value = "No se pudieron cargar detalles completos: ${e.message}"
+                }
             _isLoadingAction.value = false
         }
     }
@@ -255,11 +278,15 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             } else {
                 _isLoadingAction.value = true
                 viewModelScope.launch {
-                    originalRecipeCache?.let {
-                        val trans = translator.translateRecipe(it)
-                        translatedRecipeCache = trans
-                        _selectedRecipe.value = trans
-                        _isTranslated.value = true
+                    try {
+                        originalRecipeCache?.let {
+                            val trans = translator.translateRecipe(it)
+                            translatedRecipeCache = trans
+                            _selectedRecipe.value = trans
+                            _isTranslated.value = true
+                        }
+                    } catch (e: Exception) {
+                        _toastMessage.value = "Error al traducir. Verifica tu conexión."
                     }
                     _isLoadingAction.value = false
                 }
@@ -288,7 +315,6 @@ class RecipeViewModel(application: Application) : AndroidViewModel(application) 
             _reviewUploadResult.value = result
 
             if (result.isSuccess) {
-                // --- ACTUALIZACIÓN INMEDIATA (OPTIMISTA) ---
                 val newReview = Review(
                     id = "temp_${System.currentTimeMillis()}",
                     recipeId = recipeId,

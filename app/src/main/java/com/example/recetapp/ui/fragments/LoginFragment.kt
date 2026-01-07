@@ -1,5 +1,6 @@
 package com.example.recetapp.ui.fragments
 
+import android.content.Context
 import android.os.Bundle
 import android.view.LayoutInflater
 import android.view.View
@@ -25,6 +26,11 @@ class LoginFragment : Fragment() {
 
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
+
+        // Recuperar si había marcado "Recordarme" anteriormente para dejar la casilla marcada visualmente
+        val sharedPref = requireActivity().getPreferences(Context.MODE_PRIVATE)
+        val rememberMePrev = sharedPref.getBoolean("RECORDARME_PREF", false)
+        binding.cbRecordarme.isChecked = rememberMePrev
 
         // OBSERVADORES
         viewModel.loginResult.observe(viewLifecycleOwner) { result ->
@@ -52,10 +58,18 @@ class LoginFragment : Fragment() {
         // LISTENERS
         // ID XML: btn_login
         binding.btnLogin.setOnClickListener {
-            // IDs XML: et_email, et_password, cb_recordarme
             val email = binding.etEmail.text.toString().trim()
             val pass = binding.etPassword.text.toString()
             val remember = binding.cbRecordarme.isChecked
+
+            // GUARDAR PREFERENCIA "RECORDARME"
+            // Esto es crucial para que el SplashFragment sepa qué hacer la próxima vez
+            val prefs = requireActivity().getPreferences(Context.MODE_PRIVATE)
+            with(prefs.edit()) {
+                putBoolean("RECORDARME_PREF", remember)
+                apply()
+            }
+
             viewModel.login(email, pass, remember)
         }
 

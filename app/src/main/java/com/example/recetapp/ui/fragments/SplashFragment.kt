@@ -1,5 +1,6 @@
 package com.example.recetapp.ui.fragments
 
+import android.content.Context
 import android.os.Bundle
 import android.os.Handler
 import android.os.Looper
@@ -12,6 +13,7 @@ import androidx.navigation.fragment.findNavController
 import com.example.recetapp.R
 import com.example.recetapp.databinding.FragmentSplashBinding
 import com.example.recetapp.ui.viewmodel.AuthViewModel
+import com.google.firebase.auth.FirebaseAuth
 
 class SplashFragment : Fragment() {
 
@@ -31,18 +33,51 @@ class SplashFragment : Fragment() {
     override fun onViewCreated(view: View, savedInstanceState: Bundle?) {
         super.onViewCreated(view, savedInstanceState)
 
-        // Esperar 2 segundos y verificar sesión
+        // Usamos un pequeño delay estético, pero la lógica no depende de él para saber si estás logueado
         Handler(Looper.getMainLooper()).postDelayed({
-            // CORRECCIÓN: Usamos currentUser.value en lugar de isLoggedIn()
-            // AuthViewModel carga el usuario automáticamente al iniciarse
-            if (viewModel.currentUser.value != null) {
-                // Usuario logueado -> Ir a Inicio
-                findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+            checkSession()
+        }, 1500)
+    }
+
+    private fun checkSession() {
+        val auth = FirebaseAuth.getInstance()
+        val currentUser = auth.currentUser
+
+        // Verificar la preferencia "Recordarme"
+        val sharedPref = requireActivity().getPreferences(Context.MODE_PRIVATE)
+        val rememberMe = sharedPref.getBoolean("RECORDARME_PREF", false)
+
+        if (currentUser != null) {
+            // Caso: Hay usuario en Firebase
+            if (rememberMe) {
+                // Caso: El usuario marcó "Recordarme" -> Ir a Home
+                // Pero antes, asegurarnos que los datos del usuario (Rol, Nombre) estén cargados en el ViewModel
+                // para evitar el crash en la siguiente pantalla.
+
+                // Observamos una vez para navegar
+                viewModel.currentUser.observe(viewLifecycleOwner) { user ->
+                    if (user != null) {
+                        // Datos listos, navegar a Home
+                        findNavController().navigate(R.id.action_splashFragment_to_homeFragment)
+                        // Remover observer para evitar múltiples navegaciones (técnica simple)
+                        viewModel.currentUser.removeObservers(viewLifecycleOwner)
+                    }
+                }
+
+                // Forzar carga si aún es nulo (seguridad)
+                if (viewModel.currentUser.value == null) {
+                    viewModel.loadCurrentUser()
+                }
+
             } else {
-                // No logueado -> Ir a Login
+                // Caso: Hay usuario pero NO marcó "Recordarme" -> Cerrar sesión y pedir login
+                viewModel.logout()
                 findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
             }
-        }, 2000)
+        } else {
+            // Caso: No hay usuario en Firebase -> Ir a Login
+            findNavController().navigate(R.id.action_splashFragment_to_loginFragment)
+        }
     }
 
     override fun onDestroyView() {
