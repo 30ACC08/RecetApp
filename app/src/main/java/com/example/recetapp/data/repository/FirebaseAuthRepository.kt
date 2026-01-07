@@ -293,6 +293,39 @@ class FirebaseAuthRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
+    // --- NUEVO: FUNCIÓN PARA OBTENER SEGUIDORES ---
+    // Esta función busca los IDs en la subcolección "seguidores" y luego carga
+    // la info completa de cada usuario desde la colección principal "usuarios".
+    suspend fun getFollowers(userId: String): Result<List<User>> {
+        return try {
+            // 1. Obtener IDs de los seguidores
+            val snapshot = firestore.collection("usuarios").document(userId)
+                .collection("seguidores").get().await()
+
+            val users = mutableListOf<User>()
+
+            // 2. Por cada seguidor, obtener su perfil completo
+            for (doc in snapshot.documents) {
+                val followerId = doc.id
+                val userDoc = firestore.collection("usuarios").document(followerId).get().await()
+
+                // Mapear manualmente si existe
+                if (userDoc.exists()) {
+                    val nombre = userDoc.getString("nombre") ?: "Usuario"
+                    val email = userDoc.getString("email") ?: ""
+                    val photo = userDoc.getString("photoUrl") ?: ""
+                    val rolStr = userDoc.getString("rol")?.uppercase() ?: "USER"
+                    val rol = try { UserRole.valueOf(rolStr) } catch (e: Exception) { UserRole.USER }
+
+                    users.add(User(followerId, nombre, email, photo, rol))
+                }
+            }
+            Result.success(users)
+        } catch (e: Exception) {
+            Result.failure(e)
+        }
+    }
+
     suspend fun getNotifications(userId: String): Result<List<Notification>> {
         return try {
             val snapshot = firestore.collection("usuarios").document(userId)
@@ -303,7 +336,6 @@ class FirebaseAuthRepository {
         } catch (e: Exception) { Result.failure(e) }
     }
 
-    // NUEVO: Marcar notificación como leída
     suspend fun markNotificationAsRead(userId: String, notificationId: String): Result<Boolean> {
         return try {
             firestore.collection("usuarios").document(userId)

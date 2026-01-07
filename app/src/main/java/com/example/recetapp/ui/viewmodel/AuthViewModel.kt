@@ -60,6 +60,10 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
     private val _followingList = MutableLiveData<List<User>>()
     val followingList: LiveData<List<User>> = _followingList
 
+    // NUEVO: Lista de seguidores
+    private val _followersList = MutableLiveData<List<User>>()
+    val followersList: LiveData<List<User>> = _followersList
+
     private val _notifications = MutableLiveData<List<Notification>>()
     val notifications: LiveData<List<Notification>> = _notifications
 
@@ -85,7 +89,6 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
                 _loginResult.value = result
             } else {
                 _loginResult.value = result
-                // Opcional: Podrías poner un mensaje más específico aquí si falla
                 _validationError.value = "Credenciales incorrectas. Verifícalas e intenta de nuevo."
             }
             _isLoading.value = false
@@ -240,6 +243,14 @@ class AuthViewModel(application: Application) : AndroidViewModel(application) {
         val uid = auth.currentUser?.uid ?: return
         viewModelScope.launch {
             authRepository.getFollowingUsers(uid).onSuccess { _followingList.value = it }
+        }
+    }
+
+    // NUEVO
+    fun loadFollowersList() {
+        val uid = auth.currentUser?.uid ?: return
+        viewModelScope.launch {
+            authRepository.getFollowers(uid).onSuccess { _followersList.value = it }
         }
     }
 

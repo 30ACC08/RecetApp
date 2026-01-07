@@ -31,12 +31,20 @@ class FollowingFragment : Fragment() {
         // Configurar botón atrás
         binding.btnBack.setOnClickListener { findNavController().popBackStack() }
 
-        // --- AQUÍ ESTÁ EL CAMBIO PRINCIPAL ---
-        // Instanciamos el adaptador indicando que NO es modo admin
+        // --- DETECTAR SI ES SEGUIDORES O SIGUIENDO ---
+        val listType = arguments?.getString("listType") ?: "FOLLOWING"
+
+        if (listType == "FOLLOWERS") {
+            binding.tvTitle.text = "Seguidores"
+            binding.tvEmpty.text = "Aún no tienes seguidores"
+        } else {
+            binding.tvTitle.text = "Siguiendo"
+            binding.tvEmpty.text = "Aún no sigues a nadie"
+        }
+
         adapter = UsersAdapter(
             isAdminMode = false,
             onUserClick = { user ->
-                // Al hacer clic, navegamos al perfil público de ese usuario
                 val bundle = Bundle().apply { putParcelable("user", user) }
                 findNavController().navigate(R.id.action_global_publicProfileFragment, bundle)
             }
@@ -45,15 +53,20 @@ class FollowingFragment : Fragment() {
         binding.rvFollowing.layoutManager = LinearLayoutManager(context)
         binding.rvFollowing.adapter = adapter
 
-        // Observar la lista de seguidos
-        viewModel.followingList.observe(viewLifecycleOwner) { users ->
-            adapter.submitList(users)
-            // Mostrar mensaje si la lista está vacía (asegúrate de tener tvEmpty en tu XML)
-            binding.tvEmpty.visibility = if (users.isEmpty()) View.VISIBLE else View.GONE
+        // --- CARGAR DATOS SEGÚN TIPO ---
+        if (listType == "FOLLOWERS") {
+            viewModel.followersList.observe(viewLifecycleOwner) { users ->
+                adapter.submitList(users)
+                binding.tvEmpty.visibility = if (users.isEmpty()) View.VISIBLE else View.GONE
+            }
+            viewModel.loadFollowersList()
+        } else {
+            viewModel.followingList.observe(viewLifecycleOwner) { users ->
+                adapter.submitList(users)
+                binding.tvEmpty.visibility = if (users.isEmpty()) View.VISIBLE else View.GONE
+            }
+            viewModel.loadFollowingList()
         }
-
-        // Cargar datos
-        viewModel.loadFollowingList()
     }
 
     override fun onDestroyView() {

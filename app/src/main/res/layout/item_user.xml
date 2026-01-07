@@ -7,7 +7,7 @@
     android:layout_marginBottom="12dp"
     app:cardCornerRadius="12dp"
     app:cardElevation="2dp"
-    app:cardBackgroundColor="@color/white">
+    app:cardBackgroundColor="@color/surface_color">
 
     <LinearLayout
         android:layout_width="match_parent"
@@ -26,7 +26,7 @@
                 android:layout_width="0dp"
                 android:layout_height="wrap_content"
                 android:layout_weight="1"
-                android:text="Usuario #1"
+                android:text="Usuario"
                 android:textColor="@color/orange_primary"
                 android:textSize="12sp"
                 android:textStyle="bold" />
@@ -69,6 +69,7 @@
                 android:layout_width="wrap_content"
                 android:layout_height="wrap_content"
                 android:text="📧 "
+                android:textColor="@color/text_primary"
                 android:textSize="14sp" />
 
             <TextView
@@ -93,12 +94,11 @@
             android:id="@+id/tv_user_id"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
-            android:text="ID: 12345678..."
+            android:text="ID: ..."
             android:textColor="@color/text_hint"
             android:textSize="11sp"
             android:fontFamily="monospace" />
 
-        <!-- Botones de acción (solo visible para admin) -->
         <LinearLayout
             android:id="@+id/ll_actions"
             android:layout_width="match_parent"

@@ -5,7 +5,6 @@ import android.view.LayoutInflater
 import android.view.View
 import android.view.ViewGroup
 import android.widget.EditText
-import android.widget.TextView
 import android.widget.Toast
 import androidx.activity.result.PickVisualMediaRequest
 import androidx.activity.result.contract.ActivityResultContracts
@@ -92,10 +91,9 @@ class PerfilFragment : Fragment() {
             }
         }
 
-        // Estadísticas de Seguidores / Siguiendo
         authViewModel.userStats.observe(viewLifecycleOwner) { (followers, following) ->
             binding.tvSeguidores.text = followers.toString()
-            binding.tvSiguiendo.text = following.toString() // Ahora sí tenemos este TextView
+            binding.tvSiguiendo.text = following.toString()
         }
 
         recipeViewModel.favoritesState.observe(viewLifecycleOwner) { state ->
@@ -112,14 +110,17 @@ class PerfilFragment : Fragment() {
     private fun setupClickListeners() {
         binding.ivPerfil.setOnClickListener { pickMedia.launch(PickVisualMediaRequest(ActivityResultContracts.PickVisualMedia.ImageOnly)) }
 
-        // Clic en la estadística "Siguiendo" -> Abre lista de personas seguidas
-        binding.llStatSiguiendo.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_followingFragment) }
-
-        // Clic en la estadística "Seguidores" -> Por ahora muestra un mensaje (o podrías crear un fragmento de seguidores)
-        binding.llStatSeguidores.setOnClickListener {
-            // Podrías reutilizar el adapter de usuarios si tuvieras la lógica de backend para traer seguidores
-            Toast.makeText(context, "Lista de seguidores próximamente", Toast.LENGTH_SHORT).show()
+        // --- AQUI ESTA EL CAMBIO ---
+        binding.llStatSiguiendo.setOnClickListener {
+            val bundle = Bundle().apply { putString("listType", "FOLLOWING") }
+            findNavController().navigate(R.id.action_perfilFragment_to_followingFragment, bundle)
         }
+
+        binding.llStatSeguidores.setOnClickListener {
+            val bundle = Bundle().apply { putString("listType", "FOLLOWERS") }
+            findNavController().navigate(R.id.action_perfilFragment_to_followingFragment, bundle)
+        }
+        // --------------------------
 
         binding.llMisRecetas.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_myRecipesFragment) }
         binding.llFavoritos.setOnClickListener { findNavController().navigate(R.id.favoritosFragment) }
@@ -131,9 +132,7 @@ class PerfilFragment : Fragment() {
             findNavController().navigate(R.id.action_perfilFragment_to_loginFragment)
         }
 
-        // Nuevo menú de Configuración
         binding.llPreferencias.setOnClickListener { showSettingsDialog() }
-
         binding.llNotificaciones.setOnClickListener { findNavController().navigate(R.id.action_perfilFragment_to_notificationsFragment) }
         binding.llAyuda.setOnClickListener { Toast.makeText(context, "Soporte: help@recetapp.com", Toast.LENGTH_SHORT).show() }
     }

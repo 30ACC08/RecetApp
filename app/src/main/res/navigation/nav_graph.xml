@@ -60,6 +60,10 @@
     </fragment>
 
     <fragment android:id="@+id/followingFragment" android:name="com.example.recetapp.ui.fragments.FollowingFragment" android:label="Siguiendo">
+        <argument
+            android:name="listType"
+            app:argType="string"
+            android:defaultValue="FOLLOWING" />
         <action android:id="@+id/action_followingFragment_to_publicProfileFragment" app:destination="@id/publicProfileFragment" />
     </fragment>
 
