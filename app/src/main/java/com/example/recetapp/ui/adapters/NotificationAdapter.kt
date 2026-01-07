@@ -4,6 +4,7 @@ import android.graphics.Color
 import android.text.format.DateUtils
 import android.view.LayoutInflater
 import android.view.ViewGroup
+import androidx.core.content.ContextCompat
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
@@ -31,12 +32,17 @@ class NotificationAdapter(
             binding.tvTitle.text = notification.title
             binding.tvMessage.text = notification.message
 
-            // Estilo según estado Leído/No leído
+            // CAMBIO: Manejo de colores seguro para modo oscuro
+            val context = binding.root.context
             if (!notification.read) {
-                binding.root.setCardBackgroundColor(Color.parseColor("#E3F2FD")) // Azul muy claro
+                // Si NO está leída: Fondo sutilmente destacado (ej. Orange muy suave o surface + alpha)
+                // Usaremos un color seguro, o el mismo surface pero con un borde o tinte
+                // Aquí usamos un gris muy suave o un color "activado" definido en tus recursos
+                binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.background_light)) // O un color "unread_background" si lo defines
                 binding.tvTitle.setTypeface(null, android.graphics.Typeface.BOLD)
             } else {
-                binding.root.setCardBackgroundColor(Color.WHITE)
+                // Si está leída: Color normal de superficie
+                binding.root.setCardBackgroundColor(ContextCompat.getColor(context, R.color.surface_color))
                 binding.tvTitle.setTypeface(null, android.graphics.Typeface.NORMAL)
             }
 
@@ -51,7 +57,7 @@ class NotificationAdapter(
 
             val iconRes = when(notification.type) {
                 NotificationType.FOLLOW -> R.drawable.ic_person
-                NotificationType.REVIEW -> R.drawable.ic_search // Usa icono adecuado
+                NotificationType.REVIEW -> R.drawable.ic_search // Ajustar si tienes icono de review
                 NotificationType.LIKE -> R.drawable.ic_favorite
                 else -> R.drawable.ic_search
             }
