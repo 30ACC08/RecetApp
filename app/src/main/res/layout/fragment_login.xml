@@ -5,26 +5,25 @@
     android:layout_width="match_parent"
     android:layout_height="match_parent"
     android:fillViewport="true"
-    android:background="@color/white">
+    android:background="@color/background_app">
 
     <androidx.constraintlayout.widget.ConstraintLayout
         android:layout_width="match_parent"
         android:layout_height="wrap_content"
         android:padding="24dp">
 
-        <!-- Logo -->
         <ImageView
             android:id="@+id/iv_logo"
             android:layout_width="80dp"
             android:layout_height="80dp"
-            android:layout_marginTop="48dp"
+            android:layout_marginTop="24dp"
             android:contentDescription="@string/app_logo"
+            android:src="@drawable/ic_logo_app"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toTopOf="parent"
             app:tint="@color/orange_primary" />
 
-        <!-- Título -->
         <TextView
             android:id="@+id/tv_bienvenido"
             android:layout_width="wrap_content"
@@ -38,7 +37,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/iv_logo" />
 
-        <!-- Subtítulo -->
         <TextView
             android:id="@+id/tv_subtitulo"
             android:layout_width="wrap_content"
@@ -51,7 +49,6 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/tv_bienvenido" />
 
-        <!-- Email -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_email"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -68,11 +65,11 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textEmailAddress"
+                android:textColor="@color/text_primary"
                 android:maxLines="1" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Contraseña -->
         <com.google.android.material.textfield.TextInputLayout
             android:id="@+id/til_password"
             style="@style/Widget.Material3.TextInputLayout.OutlinedBox"
@@ -90,17 +87,18 @@
                 android:layout_width="match_parent"
                 android:layout_height="wrap_content"
                 android:inputType="textPassword"
+                android:textColor="@color/text_primary"
                 android:maxLines="1" />
 
         </com.google.android.material.textfield.TextInputLayout>
 
-        <!-- Recordarme y Olvidaste contraseña -->
         <CheckBox
             android:id="@+id/cb_recordarme"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
             android:layout_marginTop="8dp"
             android:text="@string/recordarme"
+            android:textColor="@color/text_secondary"
             android:textSize="14sp"
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/til_password" />
@@ -117,7 +115,6 @@
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintTop_toTopOf="@id/cb_recordarme" />
 
-        <!-- Botón Login -->
         <com.google.android.material.button.MaterialButton
             android:id="@+id/btn_login"
             android:layout_width="0dp"
@@ -130,107 +127,46 @@
             app:layout_constraintStart_toStartOf="parent"
             app:layout_constraintTop_toBottomOf="@id/cb_recordarme" />
 
-        <!-- Divisor -->
-        <View
-            android:id="@+id/divider_left"
+        <ImageView
+            android:id="@+id/iv_login_decoration"
             android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginTop="24dp"
-            android:layout_marginEnd="16dp"
-            android:background="@color/divider"
-            app:layout_constraintBottom_toBottomOf="@id/tv_o_continua"
-            app:layout_constraintEnd_toStartOf="@id/tv_o_continua"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toTopOf="@id/tv_o_continua" />
-
-        <TextView
-            android:id="@+id/tv_o_continua"
-            android:layout_width="wrap_content"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:text="@string/o_continua_con"
-            android:textColor="@color/text_secondary"
-            android:textSize="14sp"
+            android:layout_height="180dp"
+            android:layout_marginTop="8dp"
+            android:contentDescription="Decoración"
+            android:scaleType="fitCenter"
+            android:src="@drawable/login_illustration"
+            app:layout_constraintBottom_toTopOf="@id/tv_registrarse"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/btn_login" />
+            app:layout_constraintTop_toBottomOf="@id/btn_login"
+            app:layout_constraintVertical_bias="0.5" />
 
-        <View
-            android:id="@+id/divider_right"
-            android:layout_width="0dp"
-            android:layout_height="1dp"
-            android:layout_marginStart="16dp"
-            android:background="@color/divider"
-            app:layout_constraintBottom_toBottomOf="@id/tv_o_continua"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toEndOf="@id/tv_o_continua"
-            app:layout_constraintTop_toTopOf="@id/tv_o_continua" />
-
-        <!-- Botones Redes Sociales -->
-        <LinearLayout
-            android:id="@+id/ll_social"
-            android:layout_width="0dp"
-            android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:orientation="horizontal"
-            android:weightSum="2"
-            app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_o_continua">
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_google"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginEnd="8dp"
-                android:layout_weight="1"
-                android:text="@string/google"
-                android:textColor="@color/text_primary"
-                app:cornerRadius="12dp" />
-
-            <com.google.android.material.button.MaterialButton
-                android:id="@+id/btn_facebook"
-                style="@style/Widget.Material3.Button.OutlinedButton"
-                android:layout_width="0dp"
-                android:layout_height="48dp"
-                android:layout_marginStart="8dp"
-                android:layout_weight="1"
-                android:text="@string/facebook"
-                android:textColor="@color/text_primary"
-                app:cornerRadius="12dp" />
-
-        </LinearLayout>
-
-        <!-- Registrarse -->
         <TextView
             android:id="@+id/tv_registrarse"
             android:layout_width="wrap_content"
             android:layout_height="wrap_content"
+            android:layout_marginBottom="24dp"
             android:layout_marginTop="24dp"
             android:text="@string/no_tienes_cuenta_registrate"
             android:textAlignment="center"
             android:textColor="@color/text_secondary"
             android:textSize="14sp"
+            app:layout_constraintBottom_toTopOf="@id/cv_admin_info"
             app:layout_constraintEnd_toEndOf="parent"
             app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/ll_social" />
+            app:layout_constraintTop_toBottomOf="@id/iv_login_decoration" />
 
-        <!-- Información del administrador -->
         <androidx.cardview.widget.CardView
             android:id="@+id/cv_admin_info"
             android:layout_width="0dp"
             android:layout_height="wrap_content"
-            android:layout_marginTop="24dp"
-            android:layout_marginBottom="24dp"
+            android:layout_marginBottom="16dp"
             app:cardBackgroundColor="#FFF3E0"
             app:cardCornerRadius="8dp"
             app:cardElevation="0dp"
             app:layout_constraintBottom_toBottomOf="parent"
             app:layout_constraintEnd_toEndOf="parent"
-            app:layout_constraintStart_toStartOf="parent"
-            app:layout_constraintTop_toBottomOf="@id/tv_registrarse">
-
+            app:layout_constraintStart_toStartOf="parent" >
         </androidx.cardview.widget.CardView>
 
     </androidx.constraintlayout.widget.ConstraintLayout>
